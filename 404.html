@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script>
+  // Redirect 404s back to index for single-page app
+  const path = window.location.pathname;
+  window.location.replace('/' + window.location.pathname.split('/')[1] + '/#' + path);
+</script>
+</head>
+</html>
