@@ -926,6 +926,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
     <button class="mbtn" id="menuLoginBtn" onclick="loginUser()">🔐 Sign in with Google</button>
     <button class="mbtn out" onclick="logoutUser()">🚪 Sign Out</button>
     <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('termsPage')">📋 Terms & Conditions</button>
+    <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('privacyPage')">🔒 Privacy Policy</button>
+    <div style="margin:4px 0 8px;padding:12px 16px;background:rgba(0,198,255,.06);border-radius:14px;border:1px solid rgba(0,198,255,.15);text-align:center;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📧 Contact Us</div>
+      <a href="mailto:kasondejeremiah2@gmail.com" style="font-size:13px;color:var(--primary);font-weight:600;text-decoration:none;">kasondejeremiah2@gmail.com</a>
+    </div>
     <button class="mbtn out" onclick="closeMenu()">✕ Close</button>
   </div>
 </div>
@@ -4008,6 +4013,90 @@ if ('serviceWorker' in navigator) {
 
 </script>
 
+<div id="privacyPage" class="page" style="background:var(--bg);overflow-y:auto;">
+  <div class="hdr">
+    <div class="hdr-back" onclick="openPage('home')">←</div>
+    <div class="hdr-title">🔒 Privacy Policy</div>
+    <div style="width:30px;"></div>
+  </div>
+  <div style="padding:20px 16px 100px;">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px;">Last updated: May 2026</div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">1. Information We Collect</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">When you use TalentClip, we collect:<br><br>
+        • <b style="color:var(--text);">Account info</b> — name, email, profile photo from Google Sign-In<br>
+        • <b style="color:var(--text);">Content</b> — videos and photos you upload<br>
+        • <b style="color:var(--text);">Activity</b> — likes, follows, comments, views<br>
+        • <b style="color:var(--text);">Payment info</b> — mobile number for transactions (we do not store card details)<br>
+        • <b style="color:var(--text);">Device info</b> — browser type, operating system</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">2. How We Use Your Information</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">We use your information to:<br><br>
+        • Provide and improve TalentClip services<br>
+        • Show your content to other users<br>
+        • Process payments for verified badges and boosts<br>
+        • Calculate and pay creator earnings<br>
+        • Send important updates about your account<br>
+        • Prevent spam, fraud and abuse</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">3. Data Storage & Security</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">Your data is stored securely on <b style="color:var(--text);">Google Firebase</b> servers. Media files are stored on <b style="color:var(--text);">Cloudinary</b>. We use industry-standard encryption to protect your information. We do not sell your personal data to any third party.</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">4. Sharing of Information</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">We do <b style="color:#ff4d6d;">NOT</b> sell your data. We may share data with:<br><br>
+        • <b style="color:var(--text);">MoneyUnify</b> — only your mobile number for payment processing<br>
+        • <b style="color:var(--text);">Google Firebase</b> — for authentication and database storage<br>
+        • <b style="color:var(--text);">Cloudinary</b> — for media storage<br>
+        • <b style="color:var(--text);">Law enforcement</b> — only if required by law</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">5. Cookies & Tracking</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">TalentClip uses cookies and local storage to keep you logged in and remember your preferences. We may use analytics to understand how users use the app. You can clear cookies through your browser settings.</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">6. Your Rights</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">You have the right to:<br><br>
+        • Access the data we hold about you<br>
+        • Request deletion of your account and data<br>
+        • Update or correct your information<br>
+        • Withdraw consent at any time<br><br>
+        To exercise these rights, contact us at the email below.</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">7. Children's Privacy</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">TalentClip is not intended for users under 13 years of age. We do not knowingly collect data from children. If you believe a child has provided us with personal information, please contact us immediately.</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">8. Contact Us</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">
+          For any privacy concerns or data requests:<br><br>
+          👤 <b style="color:var(--text);">CEO: KAS JEY</b><br>
+          🏢 <b style="color:var(--text);">KJ DevWorks Studios</b><br>
+          📧 <a href="mailto:kasondejeremiah2@gmail.com" style="color:var(--primary);text-decoration:none;">kasondejeremiah2@gmail.com</a><br>
+          🇿🇲 <b style="color:var(--text);">Zambia</b>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:16px;">
+        <button onclick="openPage('home')" style="padding:14px 40px;border:none;border-radius:50px;background:linear-gradient(135deg,#00c6ff,#ff00c8);color:#fff;font-weight:700;font-size:15px;font-family:'Outfit',sans-serif;cursor:pointer;">Got it — Take me back 🔥</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <div id="termsPage" class="page" style="background:var(--bg);">
   <div class="hdr">
     <div class="hdr-back" onclick="history.back()">←</div>
@@ -4086,7 +4175,7 @@ if ('serviceWorker' in navigator) {
         <div style="font-size:13px;color:var(--muted);line-height:1.7;">For any questions about these terms, contact us at:<br><br>
           👤 <b style="color:var(--text);">CEO: KAS JEY</b><br>
           🏢 <b style="color:var(--text);">KJ DevWorks Studios</b><br>
-          📧 <b style="color:var(--text);">kasondejeremiah2@gmail.com</b><br>
+          📧 <a href="mailto:kasondejeremiah2@gmail.com" style="color:var(--primary);text-decoration:none;font-weight:600;">kasondejeremiah2@gmail.com</a><br>
           🌍 <b style="color:var(--text);">talentclip-cassata.netlify.app</b><br>
           🇿🇲 <b style="color:var(--text);">Zambia</b>
         </div>
