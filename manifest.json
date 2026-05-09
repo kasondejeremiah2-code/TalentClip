@@ -1,32 +1,26 @@
 {
   "name": "TalentClip",
   "short_name": "TalentClip",
-  "description": "Share your talent with the world",
-  "start_url": "/",
+  "description": "Show your talent. Inspire the world.",
+  "start_url": "/TalentClip/",
+  "scope": "/TalentClip/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a1a",
   "theme_color": "#0a0a1a",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/TalentClip/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/TalentClip/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["social", "entertainment"],
-  "screenshots": [
-    {
-      "src": "/screenshot1.png",
-      "sizes": "390x844",
-      "type": "image/png"
-    }
-  ]
+  "categories": ["social", "entertainment"]
 }
