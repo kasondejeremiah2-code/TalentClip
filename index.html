@@ -135,7 +135,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
 #editPostModal.open{display:flex;}
 .edit-sheet{background:var(--card);border-radius:24px 24px 0 0;width:100%;padding:20px 20px 40px;display:flex;flex-direction:column;gap:12px;}
 
-
 #tiktokPage{background:#000;}
 .tt-snap{height:100vh;scroll-snap-type:y mandatory;overflow-y:scroll;overscroll-behavior:none;}
 .tt-snap::-webkit-scrollbar{display:none;}
@@ -309,7 +308,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
 .etab{padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:var(--card);color:var(--muted);font-weight:700;font-size:12px;font-family:'Outfit',sans-serif;cursor:pointer;white-space:nowrap;transition:.2s;flex-shrink:0;}
 .etab.on{background:linear-gradient(135deg,#00c6ff,#ff00c8);color:#fff;border-color:transparent;}
 #exploreTabs::-webkit-scrollbar{display:none;}
-
 
 #searchPage{background:var(--bg);}
 .search-hdr{padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid rgba(255,255,255,.05);}
@@ -509,6 +507,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
     <textarea class="finp" id="videoDesc" placeholder="Description..." style="min-height:75px;"></textarea>
     <select class="fsel" id="categorySelect">
       <option value="">Select Category</option>
+      <option value="explore">🎲 Random / Explore (No Category)</option>
       <option value="Animation">🎬 Animation</option>
       <option value="Comedy">😂 Comedy</option>
       <option value="Music">🎤 Music</option>
@@ -909,8 +908,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
   </div>
 </div>
 
-
-
 <div id="menuOvl" onclick="closeMenu()"></div>
 <div id="sideMenu">
   <div class="menu-top">
@@ -925,12 +922,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
     <button class="mbtn" style="background:linear-gradient(135deg,#7b00ff,#ff00c8);" onclick="closeMenu();openPage('monetizePage')">⭐ Go Pro / Become a Member</button>
     <button class="mbtn" id="menuLoginBtn" onclick="loginUser()">🔐 Sign in with Google</button>
     <button class="mbtn out" onclick="logoutUser()">🚪 Sign Out</button>
+    <button class="mbtn" id="menuLiveBtn" style="display:none;background:linear-gradient(135deg,#ff0000,#ff00c8);" onclick="closeMenu();startLive()">🔴 Go Live</button>
+    <button class="mbtn" id="menuEarnBtn" style="display:none;background:linear-gradient(135deg,#00c853,#00c6ff);color:#fff;font-weight:700;" onclick="closeMenu();openPage('earningsPage')">💰 My Earnings</button>
     <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('termsPage')">📋 Terms & Conditions</button>
-    <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('privacyPage')">🔒 Privacy Policy</button>
-    <div style="margin:4px 0 8px;padding:12px 16px;background:rgba(0,198,255,.06);border-radius:14px;border:1px solid rgba(0,198,255,.15);text-align:center;">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📧 Contact Us</div>
-      <a href="mailto:kasondejeremiah2@gmail.com" style="font-size:13px;color:var(--primary);font-weight:600;text-decoration:none;">kasondejeremiah2@gmail.com</a>
-    </div>
+    <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="showPrivacyPolicy()">🔒 Privacy Policy</button>
+    <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="showContactInfo()">📧 Contact Us</button>
     <button class="mbtn out" onclick="closeMenu()">✕ Close</button>
   </div>
 </div>
@@ -952,7 +948,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
   <div class="nav-item" id="nav-upload" onclick="openPage('upload')"><span class="ni">➕</span>Upload</div>
   <div class="nav-item" id="nav-profile" onclick="openPage('profile')"><span class="ni">👤</span>Profile</div>
 </div>
-
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1232,7 +1227,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     // Auto-verify CEO — set in memory BEFORE loadProfile so badge shows immediately
-    if(u.email === 'kasondejeremiah2@gmail.com' || u.uid === 'rfS25FSYmmQDETTWgONcBbkLGem1'){
+    if(u.email === 'kjdevworksstudios@gmail.com' || u.uid === 'rfS25FSYmmQDETTWgONcBbkLGem1'){
       ud.isVerified = true;
       ud.verified   = true;
       try {
@@ -1325,6 +1320,7 @@ async function loadProfile(uid) {
     document.getElementById('profEditBtn').style.display='block';
     const eb=document.getElementById('profEarnBtn'); if(eb) eb.style.display='none';
     const lb=document.getElementById('profLiveBtn'); if(lb) lb.style.display='none';
+    const mlb=document.getElementById('menuLiveBtn'); if(mlb) mlb.style.display='none';
     renderProfileGrid([]);
     return;
   }
@@ -1373,9 +1369,12 @@ async function loadProfile(uid) {
 
     document.getElementById('profEditBtn').style.display = isOwn?'block':'none';
     const earnBtn = document.getElementById('profEarnBtn');
-    if (earnBtn) earnBtn.style.display = (isOwn && isVerified) ? 'block' : 'none';
+    if (earnBtn) earnBtn.style.display = 'none'; // Earnings accessed via profile settings only
     const liveBtn = document.getElementById('profLiveBtn');
-    if (liveBtn) liveBtn.style.display = (isOwn && isVerified) ? 'block' : 'none';
+    if (liveBtn) liveBtn.style.display = 'none'; // Go Live moved to menu
+    // Show Go Live in ☰ menu for verified owners only
+    const menuLiveBtn = document.getElementById('menuLiveBtn');
+    if (menuLiveBtn) menuLiveBtn.style.display = (isOwn && isVerified) ? 'block' : 'none';
 
     // Update header title, posts label and back button based on ownership
     const uName = d.displayName || 'User';
@@ -1473,10 +1472,10 @@ async function loadTikTokFeedForUser(uid) {
           <div class="tt-author-row">
             <img class="tt-av" src="${avSrc2}" onerror="this.src='https://ui-avatars.com/api/?name=U&background=0e0e1f&color=00c6ff'" onclick="viewUserProfile('${p.uid||''}')">
             <span class="tt-author" onclick="viewUserProfile('${p.uid||''}')">${p.authorName||'Creator'}</span>
-            ${p.uid && p.uid !== (window._currentUid||'') ? `<button class="tt-follow-inline ${isFollowing2?'following':''}" onclick="doTTFollow('${p.uid}',this)">${isFollowing2?'Following':'Follow'}</button>` : ''}
+            ${p.uid && p.uid !== (window._currentUid||'') ? '<button class="tt-follow-inline '+(isFollowing2?'following':'')+'" onclick="doTTFollow(\''+p.uid+'\',this)">'+(isFollowing2?'Following':'Follow')+'</button>' : ''}
           </div>
           <div class="tt-title">${p.title||p.caption||''}</div>
-          ${p.category ? `<div class="tt-song">🎵 ${p.category}</div>` : ''}
+          ${p.category ? '<div class="tt-song">🎵 '+p.category+'</div>' : ''}
         </div>
         <div class="tt-actions">
           <div class="tt-btn" onclick="ttLike('${p.id}',this)">
@@ -1580,7 +1579,6 @@ window.toggleFollowProfile = async() => {
   }
 };
 
-
 async function doFollow(targetUid) {
   if(!currentUser){openLoginGate();return;}
   const myRef=doc(db,'users',currentUser.uid);
@@ -1617,8 +1615,6 @@ async function doFollow(targetUid) {
     }
   });
 }
-
-
 
 // ─── Standalone Video Feed (category or profile) ───
 // Called with an array of post objects and a title string
@@ -1669,7 +1665,7 @@ function openVideoFeedPage(posts, title, backPage) {
         <div class="tt-author-row">
           <img class="tt-av" src="${avSrc}" onclick="viewUserProfile('${p.uid||''}')">
           <span class="tt-author" onclick="viewUserProfile('${p.uid||''}')">${p.authorName||'Creator'}${isVerified?' <span class="verified">✓</span>':''}</span>
-          ${p.uid && p.uid !== (window._currentUid||'') ? `<button class="tt-follow-inline ${isFollowing?'following':''}" onclick="doTTFollow('${p.uid}',this)">${isFollowing?'Following':'Follow'}</button>` : ''}
+          ${p.uid && p.uid !== (window._currentUid||'') ? '<button class="tt-follow-inline '+(isFollowing?'following':'')+'" onclick="doTTFollow(\''+p.uid+'\',this)">'+(isFollowing?'Following':'Follow')+'</button>' : ''}
         </div>
         <div class="tt-title">${p.title||p.caption||''}</div>
       </div>
@@ -1745,6 +1741,7 @@ function loadCategoryFeed(cat) {
     document.body.appendChild(snapWrap);
     document.body.appendChild(catBack);
 
+    let catSlideCount = 0;
     posts.forEach(post => {
       const slide = document.createElement('div');
       slide.className = 'tt-slide';
@@ -1821,6 +1818,11 @@ function loadCategoryFeed(cat) {
       } else { return; }
 
       snapWrap.appendChild(slide);
+      catSlideCount++;
+      // Insert ad every 5 slides (same as explore)
+      if(catSlideCount > 0 && catSlideCount % 5 === 0 && !isPremiumUser){
+        snapWrap.appendChild(makeAdSlide());
+      }
     });
 
     // Autoplay observer
@@ -1832,7 +1834,7 @@ function loadCategoryFeed(cat) {
         else { v.pause(); v.currentTime=0; }
       });
     },{threshold:0.7});
-    snapWrap.querySelectorAll('.tt-slide').forEach(s=>catObs.observe(s));
+    snapWrap.querySelectorAll('.tt-slide, .ad-slide').forEach(s=>catObs.observe(s));
   }).catch(e=>{
     grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">⚠️ Could not load posts.<br>${e.message}</div>`;
   });
@@ -1901,6 +1903,7 @@ async function loadExploreAll() {
     posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
     if (!exploreCategory) posts = posts.sort(() => Math.random() - 0.5);
 
+    window._exploreAllPosts = posts; // store for correct video click
     posts.forEach(post => {
       const el = document.createElement('div');
       el.className = 'fg-item';
@@ -1925,12 +1928,18 @@ async function loadExploreAll() {
           ${verifiedBadge}${boostedBadge}
           <div class="fg-overlay"><div class="fg-likes">❤️ ${fmt(post.likes||0)} &nbsp; 👁 ${fmt(post.views||0)}</div></div>`;
         el.onclick = () => {
-          exploreContentType = 'video';
-          document.querySelectorAll('.etab[id^="ctype-"]').forEach(b => b.classList.remove('on'));
-          document.getElementById('ctype-video')?.classList.add('on');
-          document.getElementById('explorePhotoGrid').style.display = 'none';
-          document.getElementById('exploreVideoFeed').style.display = 'block';
-          loadTikTokFeed(exploreCategory);
+          // Open standalone feed starting from THIS video
+          const allVideos = (window._exploreAllPosts||[]).filter(p=>p.type==='video'&&p.mediaUrl);
+          const startIdx = Math.max(0, allVideos.findIndex(p=>p.id===post.id));
+          const ordered = [...allVideos.slice(startIdx), ...allVideos.slice(0, startIdx)];
+          if(ordered.length > 0) {
+            openVideoFeedPage(ordered, 'Videos', 'tiktokPage');
+          } else {
+            exploreContentType = 'video';
+            document.getElementById('explorePhotoGrid').style.display = 'none';
+            document.getElementById('exploreVideoFeed').style.display = 'block';
+            loadTikTokFeed(exploreCategory);
+          }
         };
       }
       photoGrid.appendChild(el);
@@ -1966,8 +1975,6 @@ async function loadExplorePhotos() {
     });
   } catch(e) { photoGrid.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);">Could not load photos</div>'; }
 }
-
-
 
 async function loadTikTokFeed(cat) {
   const wrap = document.getElementById('exploreVideoFeed');
@@ -2042,10 +2049,10 @@ async function loadTikTokFeed(cat) {
           <div class="tt-author-row">
             <img class="tt-av" src="${avSrc}" onerror="this.src='https://ui-avatars.com/api/?name=U&background=0e0e1f&color=00c6ff'" onclick="viewUserProfile('${p.uid||''}')">
             <span class="tt-author" onclick="viewUserProfile('${p.uid||''}')">${p.authorName||'Creator'}${isVerified?' <span class="verified">✓</span>':''}</span>
-            ${p.uid && p.uid !== (window._currentUid||'') ? `<button class="tt-follow-inline ${isFollowing?'following':''}" onclick="doTTFollow('${p.uid}',this)">${isFollowing?'Following':'Follow'}</button>` : ''}
+            ${p.uid && p.uid !== (window._currentUid||'') ? '<button class="tt-follow-inline '+(isFollowing?'following':'')+'" onclick="doTTFollow(\''+p.uid+'\',this)">'+(isFollowing?'Following':'Follow')+'</button>' : ''}
           </div>
           <div class="tt-title">${p.title||p.caption||''}</div>
-          ${p.category ? `<div class="tt-song">🎬 ${p.category}</div>` : ''}
+          ${p.category ? '<div class="tt-song">🎬 '+p.category+'</div>' : ''}
         </div>
         <div class="tt-actions">
           <div class="tt-btn" onclick="ttLike('${p.id}',this)">
@@ -2259,7 +2266,6 @@ async function recordAdImpression() {
     }, { merge: true });
   } catch(e) { /* silent */ }
 }
-
 
 window.ttLike = async(postId, btn)=>{
   if(!currentUser){openLoginGate();return;}
@@ -3013,8 +3019,6 @@ async function checkAndApplyBoost(postId) {
   }
 }
 
-
-
 // Profile pic tap — view full size or change if own profile
 window.onProfilePicTap = () => {
   const src = document.getElementById('profAv').src;
@@ -3189,7 +3193,7 @@ window.reportComment = (commentId, postId) => {
     </div>
     <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Why are you reporting this comment?</div>
     ${reasons.map(r=>`
-      <div onclick="submitReport('${commentId}','${postId}','${r.replace(/'/g,'')}')" 
+      <div onclick="submitReport('${commentId}','${postId}','${r.replace(/'/g,'')}')"
         style="padding:13px 14px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:10px;">
         ${r}
       </div>`).join('')}`;
@@ -3295,7 +3299,7 @@ window.showSharePanel = (url, title) => {
         <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><span style="font-size:32px;">✈️</span><span style="font-size:11px;color:#aaa;">Telegram</span></div>
       </a>
     </div>
-    <button onclick="navigator.clipboard?.writeText('${url}').then(()=>{toast('Link copied! 🔗');document.getElementById('sharePanel').remove();})" 
+    <button onclick="navigator.clipboard?.writeText('${url}').then(()=>{toast('Link copied! 🔗');document.getElementById('sharePanel').remove();})"
       style="width:100%;padding:12px;background:rgba(255,255,255,.07);border:none;border-radius:12px;color:#fff;font-size:13px;cursor:pointer;margin-bottom:8px;">
       🔗 Copy Link
     </button>`;
@@ -3579,7 +3583,7 @@ async function searchCreators(q) {
     const qLower = q.toLowerCase();
     const snap = await getDocs(query(
       collection(db,'users'),
-      
+
       limit(50)
     ));
 
@@ -3608,7 +3612,7 @@ async function searchCreators(q) {
             <div class="creator-bio">${u.bio || 'No bio yet'}</div>
             <div class="creator-stats">👥 ${fmt(u.followers||0)} followers &nbsp;❤️ ${fmt(u.totalLikes||0)} likes</div>
           </div>
-          ${!isMe ? `<button class="creator-follow" onclick="event.stopPropagation();searchFollow('${u.id}',this)">${isFollowing?'✅ Following':'Follow'}</button>` : ''}
+          ${!isMe ? '<button class="creator-follow" onclick="event.stopPropagation();searchFollow(\''+u.id+'\',this)">'+(followingSet.has(u.id)?'✅ Following':'Follow')+'</button>' : ''}
         </div>`;
     }).join('');
   } catch(e) {
@@ -3977,8 +3981,6 @@ window.closeMenu=()=>{document.getElementById('sideMenu').classList.remove('open
 // ─── Boot ───
 window.addEventListener('load',()=>{ setTimeout(()=>{ document.getElementById('loader').style.display='none'; }, 1600); });
 
-
-
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
@@ -4012,90 +4014,6 @@ if ('serviceWorker' in navigator) {
 }
 
 </script>
-
-<div id="privacyPage" class="page" style="background:var(--bg);overflow-y:auto;">
-  <div class="hdr">
-    <div class="hdr-back" onclick="openPage('home')">←</div>
-    <div class="hdr-title">🔒 Privacy Policy</div>
-    <div style="width:30px;"></div>
-  </div>
-  <div style="padding:20px 16px 100px;">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:20px;">Last updated: May 2026</div>
-    <div style="display:flex;flex-direction:column;gap:16px;">
-
-      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">1. Information We Collect</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;">When you use TalentClip, we collect:<br><br>
-        • <b style="color:var(--text);">Account info</b> — name, email, profile photo from Google Sign-In<br>
-        • <b style="color:var(--text);">Content</b> — videos and photos you upload<br>
-        • <b style="color:var(--text);">Activity</b> — likes, follows, comments, views<br>
-        • <b style="color:var(--text);">Payment info</b> — mobile number for transactions (we do not store card details)<br>
-        • <b style="color:var(--text);">Device info</b> — browser type, operating system</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">2. How We Use Your Information</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;">We use your information to:<br><br>
-        • Provide and improve TalentClip services<br>
-        • Show your content to other users<br>
-        • Process payments for verified badges and boosts<br>
-        • Calculate and pay creator earnings<br>
-        • Send important updates about your account<br>
-        • Prevent spam, fraud and abuse</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">3. Data Storage & Security</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;">Your data is stored securely on <b style="color:var(--text);">Google Firebase</b> servers. Media files are stored on <b style="color:var(--text);">Cloudinary</b>. We use industry-standard encryption to protect your information. We do not sell your personal data to any third party.</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">4. Sharing of Information</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;">We do <b style="color:#ff4d6d;">NOT</b> sell your data. We may share data with:<br><br>
-        • <b style="color:var(--text);">MoneyUnify</b> — only your mobile number for payment processing<br>
-        • <b style="color:var(--text);">Google Firebase</b> — for authentication and database storage<br>
-        • <b style="color:var(--text);">Cloudinary</b> — for media storage<br>
-        • <b style="color:var(--text);">Law enforcement</b> — only if required by law</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">5. Cookies & Tracking</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;">TalentClip uses cookies and local storage to keep you logged in and remember your preferences. We may use analytics to understand how users use the app. You can clear cookies through your browser settings.</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">6. Your Rights</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;">You have the right to:<br><br>
-        • Access the data we hold about you<br>
-        • Request deletion of your account and data<br>
-        • Update or correct your information<br>
-        • Withdraw consent at any time<br><br>
-        To exercise these rights, contact us at the email below.</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">7. Children's Privacy</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;">TalentClip is not intended for users under 13 years of age. We do not knowingly collect data from children. If you believe a child has provided us with personal information, please contact us immediately.</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);">
-        <div style="font-weight:700;font-size:15px;margin-bottom:8px;color:var(--primary);">8. Contact Us</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7;">
-          For any privacy concerns or data requests:<br><br>
-          👤 <b style="color:var(--text);">CEO: KAS JEY</b><br>
-          🏢 <b style="color:var(--text);">KJ DevWorks Studios</b><br>
-          📧 <a href="mailto:kasondejeremiah2@gmail.com" style="color:var(--primary);text-decoration:none;">kasondejeremiah2@gmail.com</a><br>
-          🇿🇲 <b style="color:var(--text);">Zambia</b>
-        </div>
-      </div>
-
-      <div style="text-align:center;padding:16px;">
-        <button onclick="openPage('home')" style="padding:14px 40px;border:none;border-radius:50px;background:linear-gradient(135deg,#00c6ff,#ff00c8);color:#fff;font-weight:700;font-size:15px;font-family:'Outfit',sans-serif;cursor:pointer;">Got it — Take me back 🔥</button>
-      </div>
-
-    </div>
-  </div>
-</div>
 
 <div id="termsPage" class="page" style="background:var(--bg);">
   <div class="hdr">
@@ -4175,7 +4093,7 @@ if ('serviceWorker' in navigator) {
         <div style="font-size:13px;color:var(--muted);line-height:1.7;">For any questions about these terms, contact us at:<br><br>
           👤 <b style="color:var(--text);">CEO: KAS JEY</b><br>
           🏢 <b style="color:var(--text);">KJ DevWorks Studios</b><br>
-          📧 <a href="mailto:kasondejeremiah2@gmail.com" style="color:var(--primary);text-decoration:none;font-weight:600;">kasondejeremiah2@gmail.com</a><br>
+          📧 <b style="color:var(--text);">kjdevworksstudios@gmail.com</b><br>
           🌍 <b style="color:var(--text);">talentclip-cassata.netlify.app</b><br>
           🇿🇲 <b style="color:var(--text);">Zambia</b>
         </div>
@@ -4188,7 +4106,6 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 </div>
-
 
 <!-- PWA Install Banner -->
 <div id="installBanner" style="display:none;position:fixed;bottom:80px;left:12px;right:12px;background:linear-gradient(135deg,#7b00ff,#00c6ff);border-radius:18px;padding:14px 16px;z-index:9999;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,198,255,.4);">
