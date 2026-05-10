@@ -135,6 +135,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
 #editPostModal.open{display:flex;}
 .edit-sheet{background:var(--card);border-radius:24px 24px 0 0;width:100%;padding:20px 20px 40px;display:flex;flex-direction:column;gap:12px;}
 
+
 #tiktokPage{background:#000;}
 .tt-snap{height:100vh;scroll-snap-type:y mandatory;overflow-y:scroll;overscroll-behavior:none;}
 .tt-snap::-webkit-scrollbar{display:none;}
@@ -309,6 +310,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
 .etab.on{background:linear-gradient(135deg,#00c6ff,#ff00c8);color:#fff;border-color:transparent;}
 #exploreTabs::-webkit-scrollbar{display:none;}
 
+
 #searchPage{background:var(--bg);}
 .search-hdr{padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid rgba(255,255,255,.05);}
 .search-hdr-inp{flex:1;padding:11px 16px;border-radius:50px;border:1px solid rgba(255,255,255,.1);background:var(--card);color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;outline:none;}
@@ -361,6 +363,14 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
 .benefit-ico{font-size:18px;width:24px;text-align:center;flex-shrink:0;margin-top:1px;}
 .benefit-text{font-size:13px;color:var(--text);line-height:1.4;}
 .benefit-text b{color:var(--primary);}
+
+/* ── SKELETON LOADING ── */
+.skeleton{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;animation:skelAnim 1.4s infinite;}
+@keyframes skelAnim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-av{width:80px;height:80px;border-radius:50%;}
+.skel-line{height:14px;border-radius:8px;margin:6px 0;}
+.skel-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;}
+.skel-box{aspect-ratio:9/13;}
 </style>
 </head>
 <body>
@@ -908,6 +918,8 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
   </div>
 </div>
 
+
+
 <div id="menuOvl" onclick="closeMenu()"></div>
 <div id="sideMenu">
   <div class="menu-top">
@@ -924,9 +936,10 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
     <button class="mbtn out" onclick="logoutUser()">🚪 Sign Out</button>
     <button class="mbtn" id="menuLiveBtn" style="display:none;background:linear-gradient(135deg,#ff0000,#ff00c8);" onclick="closeMenu();startLive()">🔴 Go Live</button>
     <button class="mbtn" id="menuEarnBtn" style="display:none;background:linear-gradient(135deg,#00c853,#00c6ff);color:#fff;font-weight:700;" onclick="closeMenu();openPage('earningsPage')">💰 My Earnings</button>
+    <button class="mbtn" id="menuSettingsBtn" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--muted);font-size:13px;" onclick="closeMenu();openPage('earningsPage')">📊 Creator Dashboard</button>
     <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('termsPage')">📋 Terms & Conditions</button>
-    <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="showPrivacyPolicy()">🔒 Privacy Policy</button>
-    <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="showContactInfo()">📧 Contact Us</button>
+    <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('privacyPage')">🔒 Privacy Policy</button>
+    <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('contactPage')">📧 Contact Us</button>
     <button class="mbtn out" onclick="closeMenu()">✕ Close</button>
   </div>
 </div>
@@ -948,6 +961,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
   <div class="nav-item" id="nav-upload" onclick="openPage('upload')"><span class="ni">➕</span>Upload</div>
   <div class="nav-item" id="nav-profile" onclick="openPage('profile')"><span class="ni">👤</span>Profile</div>
 </div>
+
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1190,7 +1204,7 @@ onAuthStateChanged(auth, async (user) => {
 
     const displayName = ud.displayName || safeName;
     const av = ud.photoURL || u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName.charAt(0)||'T')}&background=0e0e1f&color=00c6ff`;
-    const isVerifiedUser = ud.isVerified === true || ud.verified === true || false;
+    const isVerifiedUser = false; // Verified badges disabled
     document.getElementById('profName').textContent = displayName;
     // Show verified badge next to name
     let verBadge = document.getElementById('profVerBadge');
@@ -1228,11 +1242,11 @@ onAuthStateChanged(auth, async (user) => {
 
     // Auto-verify CEO — set in memory BEFORE loadProfile so badge shows immediately
     if(u.email === 'kjdevworksstudios@gmail.com' || u.uid === 'rfS25FSYmmQDETTWgONcBbkLGem1'){
-      ud.isVerified = true;
-      ud.verified   = true;
+      // CEO auto-verify disabled - use payment system
+      // ud.isVerified = true;
       try {
         await setDoc(doc(db,'users',u.uid), {
-          isVerified: true, verified: true,
+          // isVerified disabled until payment live
           verifiedAt: serverTimestamp(),
           displayName: ud?.displayName || 'KAS JEY',
           role: 'CEO'
@@ -1309,8 +1323,23 @@ window.changeProfPic = async () => {
   } catch(e) { toast('Upload error: '+e.message); }
 };
 
+
+// ─── Profile Skeleton Loading ───
+function showProfileSkeleton() {
+  document.getElementById('profAv').src = 'https://ui-avatars.com/api/?name=U&background=0e0e1f&color=00c6ff';
+  document.getElementById('profName').innerHTML = '<div class="skeleton skel-line" style="width:120px;display:inline-block;"></div>';
+  document.getElementById('profBio').innerHTML = '<div class="skeleton skel-line" style="width:180px;"></div>';
+  ['profPosts','profFollowers','profFollowing','profLikes'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '<div class="skeleton skel-line" style="width:30px;display:inline-block;"></div>';
+  });
+  const grid = document.getElementById('profGrid');
+  if(grid) grid.innerHTML = Array(6).fill('<div class="skel-box skeleton"></div>').join('');
+}
 async function loadProfile(uid) {
   viewingUid = uid || currentUser?.uid || null;
+  // Show skeleton while loading
+  showProfileSkeleton();
   if (!viewingUid) {
     document.getElementById('profName').textContent='Guest';
     document.getElementById('profBio').textContent='Sign in to personalize your profile.';
@@ -1332,8 +1361,8 @@ async function loadProfile(uid) {
     document.getElementById('profName').textContent = d.displayName||'User';
     document.getElementById('profBio').textContent = d.bio||'No bio yet.';
 
-    const isVerified = d.isVerified === true || d.role === 'CEO' || !!(d.verified && d.verifiedExpiry && new Date(d.verifiedExpiry.toDate ? d.verifiedExpiry.toDate() : d.verifiedExpiry) > new Date());
-    document.getElementById('profVerified').style.display = isVerified ? 'inline-flex' : 'none';
+    const isVerified = false; // Verified badges disabled until payment system is live
+    document.getElementById('profVerified').style.display = 'none'; // Badges disabled
 
     const av = d.photoURL||`https://ui-avatars.com/api/?name=${encodeURIComponent(d.displayName||'U')}&background=0e0e1f&color=00c6ff`;
     document.getElementById('profAv').src = av;
@@ -1369,7 +1398,9 @@ async function loadProfile(uid) {
 
     document.getElementById('profEditBtn').style.display = isOwn?'block':'none';
     const earnBtn = document.getElementById('profEarnBtn');
-    if (earnBtn) earnBtn.style.display = 'none'; // Earnings accessed via profile settings only
+    if (earnBtn) earnBtn.style.display = 'none';
+    const menuEarnBtn = document.getElementById('menuEarnBtn');
+    if (menuEarnBtn) menuEarnBtn.style.display = isOwn ? 'block' : 'none';
     const liveBtn = document.getElementById('profLiveBtn');
     if (liveBtn) liveBtn.style.display = 'none'; // Go Live moved to menu
     // Show Go Live in ☰ menu for verified owners only
@@ -1422,7 +1453,7 @@ function renderProfileGrid(posts) {
       const vThumb = getVideoThumb(post.mediaUrl);
       el.innerHTML=`
         <div style="width:100%;height:100%;position:relative;background:#0d0d20;">
-          ${vThumb ? `<img src="${vThumb}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">` : ''}
+          ${vThumb ? '<img src="'+vThumb+'" style="width:100%;height:100%;object-fit:cover;">' : ''}
           <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
             <div style="width:32px;height:32px;background:rgba(0,0,0,.55);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;">▶</div>
           </div>
@@ -1579,6 +1610,7 @@ window.toggleFollowProfile = async() => {
   }
 };
 
+
 async function doFollow(targetUid) {
   if(!currentUser){openLoginGate();return;}
   const myRef=doc(db,'users',currentUser.uid);
@@ -1615,6 +1647,8 @@ async function doFollow(targetUid) {
     }
   });
 }
+
+
 
 // ─── Standalone Video Feed (category or profile) ───
 // Called with an array of post objects and a title string
@@ -1664,7 +1698,7 @@ function openVideoFeedPage(posts, title, backPage) {
       <div class="tt-info">
         <div class="tt-author-row">
           <img class="tt-av" src="${avSrc}" onclick="viewUserProfile('${p.uid||''}')">
-          <span class="tt-author" onclick="viewUserProfile('${p.uid||''}')">${p.authorName||'Creator'}${isVerified?' <span class="verified">✓</span>':''}</span>
+          <span class="tt-author" onclick="viewUserProfile('${p.uid||''}')">${p.authorName||'Creator'}</span>
           ${p.uid && p.uid !== (window._currentUid||'') ? '<button class="tt-follow-inline '+(isFollowing?'following':'')+'" onclick="doTTFollow(\''+p.uid+'\',this)">'+(isFollowing?'Following':'Follow')+'</button>' : ''}
         </div>
         <div class="tt-title">${p.title||p.caption||''}</div>
@@ -1763,7 +1797,7 @@ function loadCategoryFeed(cat) {
           <div class="tt-info">
             <div class="tt-author-row">
               <img class="tt-av" src="${avSrc}" onerror="this.src='https://ui-avatars.com/api/?name=U&background=0e0e1f&color=00c6ff'" onclick="viewUserProfile('${post.uid||''}')">
-              <span class="tt-author" onclick="viewUserProfile('${post.uid||''}')">${post.authorName||'Creator'}${isVerified?' <span class="verified">✓</span>':''}</span>
+              <span class="tt-author" onclick="viewUserProfile('${post.uid||''}')">${post.authorName||'Creator'}</span>
               ${followBtn}
             </div>
             <div class="tt-title">${post.caption||post.title||''}</div>
@@ -1794,7 +1828,7 @@ function loadCategoryFeed(cat) {
           <div class="tt-info">
             <div class="tt-author-row">
               <img class="tt-av" src="${avSrc}" onerror="this.src='https://ui-avatars.com/api/?name=U&background=0e0e1f&color=00c6ff'" onclick="viewUserProfile('${post.uid||''}')">
-              <span class="tt-author" onclick="viewUserProfile('${post.uid||''}')">${post.authorName||'Creator'}${isVerified?' <span class="verified">✓</span>':''}</span>
+              <span class="tt-author" onclick="viewUserProfile('${post.uid||''}')">${post.authorName||'Creator'}</span>
               ${followBtn}
             </div>
             <div class="tt-title">${post.title||post.caption||''}</div>
@@ -1907,8 +1941,7 @@ async function loadExploreAll() {
     posts.forEach(post => {
       const el = document.createElement('div');
       el.className = 'fg-item';
-      const isVerified = post.authorVerified;
-      const verifiedBadge = isVerified ? '<div style="position:absolute;top:4px;left:4px;background:linear-gradient(135deg,#00c6ff,#7b00ff);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;">✓</div>' : '';
+      const verifiedBadge = ''; // Badges disabled
       const boostedBadge = post.boosted ? '<div class="boost-badge">🚀</div>' : '';
 
       if (post.type === 'photo' && post.mediaUrl) {
@@ -1920,7 +1953,7 @@ async function loadExploreAll() {
         const vThumb2 = getVideoThumb(post.mediaUrl);
         el.innerHTML = `
           <div style="width:100%;height:100%;position:relative;background:#0d0d20;">
-            ${vThumb2 ? `<img src="${vThumb2}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">` : ''}
+            ${vThumb2 ? '<img src="'+vThumb2+'" style="width:100%;height:100%;object-fit:cover;">' : ''}
             <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
               <div style="width:36px;height:36px;background:rgba(0,0,0,.55);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">▶</div>
             </div>
@@ -1975,6 +2008,8 @@ async function loadExplorePhotos() {
     });
   } catch(e) { photoGrid.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);">Could not load photos</div>'; }
 }
+
+
 
 async function loadTikTokFeed(cat) {
   const wrap = document.getElementById('exploreVideoFeed');
@@ -2048,7 +2083,7 @@ async function loadTikTokFeed(cat) {
         <div class="tt-info">
           <div class="tt-author-row">
             <img class="tt-av" src="${avSrc}" onerror="this.src='https://ui-avatars.com/api/?name=U&background=0e0e1f&color=00c6ff'" onclick="viewUserProfile('${p.uid||''}')">
-            <span class="tt-author" onclick="viewUserProfile('${p.uid||''}')">${p.authorName||'Creator'}${isVerified?' <span class="verified">✓</span>':''}</span>
+            <span class="tt-author" onclick="viewUserProfile('${p.uid||''}')">${p.authorName||'Creator'}</span>
             ${p.uid && p.uid !== (window._currentUid||'') ? '<button class="tt-follow-inline '+(isFollowing?'following':'')+'" onclick="doTTFollow(\''+p.uid+'\',this)">'+(isFollowing?'Following':'Follow')+'</button>' : ''}
           </div>
           <div class="tt-title">${p.title||p.caption||''}</div>
@@ -2266,6 +2301,7 @@ async function recordAdImpression() {
     }, { merge: true });
   } catch(e) { /* silent */ }
 }
+
 
 window.ttLike = async(postId, btn)=>{
   if(!currentUser){openLoginGate();return;}
@@ -3019,6 +3055,8 @@ async function checkAndApplyBoost(postId) {
   }
 }
 
+
+
 // Profile pic tap — view full size or change if own profile
 window.onProfilePicTap = () => {
   const src = document.getElementById('profAv').src;
@@ -3193,7 +3231,7 @@ window.reportComment = (commentId, postId) => {
     </div>
     <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Why are you reporting this comment?</div>
     ${reasons.map(r=>`
-      <div onclick="submitReport('${commentId}','${postId}','${r.replace(/'/g,'')}')"
+      <div onclick="submitReport('${commentId}','${postId}','${r.replace(/'/g,'')}')" 
         style="padding:13px 14px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:10px;">
         ${r}
       </div>`).join('')}`;
@@ -3299,7 +3337,7 @@ window.showSharePanel = (url, title) => {
         <div style="display:flex;flex-direction:column;align-items:center;gap:5px;"><span style="font-size:32px;">✈️</span><span style="font-size:11px;color:#aaa;">Telegram</span></div>
       </a>
     </div>
-    <button onclick="navigator.clipboard?.writeText('${url}').then(()=>{toast('Link copied! 🔗');document.getElementById('sharePanel').remove();})"
+    <button onclick="navigator.clipboard?.writeText('${url}').then(()=>{toast('Link copied! 🔗');document.getElementById('sharePanel').remove();})" 
       style="width:100%;padding:12px;background:rgba(255,255,255,.07);border:none;border-radius:12px;color:#fff;font-size:13px;cursor:pointer;margin-bottom:8px;">
       🔗 Copy Link
     </button>`;
@@ -3583,7 +3621,7 @@ async function searchCreators(q) {
     const qLower = q.toLowerCase();
     const snap = await getDocs(query(
       collection(db,'users'),
-
+      
       limit(50)
     ));
 
@@ -3981,6 +4019,8 @@ window.closeMenu=()=>{document.getElementById('sideMenu').classList.remove('open
 // ─── Boot ───
 window.addEventListener('load',()=>{ setTimeout(()=>{ document.getElementById('loader').style.display='none'; }, 1600); });
 
+
+
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
@@ -4014,6 +4054,45 @@ if ('serviceWorker' in navigator) {
 }
 
 </script>
+
+<!-- PRIVACY PAGE -->
+<div id="privacyPage" class="page" style="background:var(--bg);overflow-y:auto;">
+  <div class="hdr"><div class="hdr-back" onclick="openPage('home')">←</div><div class="hdr-title">🔒 Privacy Policy</div><div style="width:30px;"></div></div>
+  <div style="padding:20px 16px 100px;display:flex;flex-direction:column;gap:14px;">
+    <div style="font-size:12px;color:var(--muted);">Last updated: May 2026</div>
+    <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);"><div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:8px;">1. Data We Collect</div><div style="font-size:13px;color:var(--muted);line-height:1.7;">Name, email, profile photo (from Google), videos/photos you upload, likes, follows, comments, payment mobile number, device info.</div></div>
+    <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);"><div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:8px;">2. How We Use It</div><div style="font-size:13px;color:var(--muted);line-height:1.7;">To provide TalentClip services, show your content, process payments, calculate creator earnings, and prevent fraud.</div></div>
+    <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);"><div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:8px;">3. Storage & Security</div><div style="font-size:13px;color:var(--muted);line-height:1.7;">Data stored on Google Firebase. Media on Cloudinary. We use encryption and never sell your data to third parties.</div></div>
+    <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);"><div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:8px;">4. Sharing</div><div style="font-size:13px;color:var(--muted);line-height:1.7;">We only share your mobile number with MoneyUnify for payment processing. We do NOT sell your data.</div></div>
+    <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);"><div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:8px;">5. Your Rights</div><div style="font-size:13px;color:var(--muted);line-height:1.7;">You can request account deletion, data access, or corrections at any time. Contact us below.</div></div>
+    <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,.06);"><div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:8px;">6. Children</div><div style="font-size:13px;color:var(--muted);line-height:1.7;">TalentClip is not for users under 13. We do not knowingly collect data from children.</div></div>
+    <div style="text-align:center;padding:8px;"><button onclick="openPage('home')" style="padding:12px 36px;border:none;border-radius:50px;background:linear-gradient(135deg,#00c6ff,#ff00c8);color:#fff;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;">Got it 🔥</button></div>
+  </div>
+</div>
+
+<!-- CONTACT PAGE -->
+<div id="contactPage" class="page" style="background:var(--bg);overflow-y:auto;">
+  <div class="hdr"><div class="hdr-back" onclick="openPage('home')">←</div><div class="hdr-title">📧 Contact Us</div><div style="width:30px;"></div></div>
+  <div style="padding:30px 20px 100px;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;">
+    <div style="font-size:60px;margin-bottom:8px;">📬</div>
+    <div style="font-family:'Bebas Neue';font-size:28px;letter-spacing:2px;background:linear-gradient(135deg,#00c6ff,#ff00c8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Get In Touch</div>
+    <div style="font-size:14px;color:var(--muted);line-height:1.7;">Have questions, issues or want to advertise?<br>We respond within 24 hours.</div>
+    <div style="background:var(--card);border-radius:20px;padding:24px;width:100%;border:1px solid rgba(0,198,255,.2);">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">CEO & Founder</div>
+      <div style="font-weight:700;font-size:16px;margin-bottom:16px;">KAS JEY — KJ DevWorks Studios 🇿🇲</div>
+      <a href="mailto:kjdevworksstudios@gmail.com" style="display:block;padding:14px 24px;background:linear-gradient(135deg,#00c6ff,#ff00c8);border-radius:50px;color:#fff;font-weight:700;font-size:14px;text-decoration:none;margin-bottom:12px;">✉️ kjdevworksstudios@gmail.com</a>
+      <div style="font-size:12px;color:var(--muted);">Tap to open your email app</div>
+    </div>
+    <div style="background:var(--card);border-radius:20px;padding:20px;width:100%;border:1px solid rgba(255,255,255,.06);">
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px;">📢 Advertise on TalentClip</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;">Reach thousands of Zambian creators and fans. Contact us to discuss ad packages and pricing.</div>
+    </div>
+    <div style="background:var(--card);border-radius:20px;padding:20px;width:100%;border:1px solid rgba(255,255,255,.06);">
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px;">⚖️ Legal & Privacy</div>
+      <div style="font-size:13px;color:var(--muted);">For data requests or legal inquiries, email us with subject line "Legal Request".</div>
+    </div>
+  </div>
+</div>
 
 <div id="termsPage" class="page" style="background:var(--bg);">
   <div class="hdr">
@@ -4106,6 +4185,7 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 </div>
+
 
 <!-- PWA Install Banner -->
 <div id="installBanner" style="display:none;position:fixed;bottom:80px;left:12px;right:12px;background:linear-gradient(135deg,#7b00ff,#00c6ff);border-radius:18px;padding:14px 16px;z-index:9999;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,198,255,.4);">
