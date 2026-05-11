@@ -1,31 +1,34 @@
 {
-  "name": "TalentClip",
+  "name": "TalentClip 🔥",
   "short_name": "TalentClip",
-  "description": "Show your talent. Inspire the world.",
-  "start_url": "/TalentClip/",
-  "scope": "/TalentClip/",
+  "description": "Share your talent with the world. Post videos, photos, go live and earn money as a creator in Zambia.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0a0a1a",
-  "theme_color": "#0a0a1a",
+  "background_color": "#060612",
+  "theme_color": "#060612",
+  "orientation": "portrait-primary",
   "lang": "en",
-  "categories": ["social", "entertainment"],
+  "categories": ["social", "entertainment", "video"],
   "icons": [
-    { "src": "/TalentClip/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any maskable" },
-    { "src": "/TalentClip/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any maskable" },
-    { "src": "/TalentClip/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/TalentClip/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/TalentClip/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/TalentClip/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/TalentClip/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/TalentClip/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
   ],
-  "screenshots": [
+  "shortcuts": [
     {
-      "src": "/TalentClip/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow"
+      "name": "Upload Video",
+      "short_name": "Upload",
+      "description": "Post a new video",
+      "url": "/?action=upload",
+      "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Explore",
+      "short_name": "Explore", 
+      "description": "Browse latest content",
+      "url": "/?action=explore",
+      "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
     }
-  ]
+  ],
+  "prefer_related_applications": false
 }
