@@ -16,17 +16,36 @@
 <script>
 // Create manifest dynamically so no external file needed
 const manifestData = {
-  name: "TalentClip 🔥",
+  name: "TalentClip",
   short_name: "TalentClip",
-  description: "Share your talent with the world",
-  start_url: "/",
+  description: "Show your talent. Inspire the world. A social media platform for Zambian creators.",
+  start_url: "./",
+  scope: "./",
   display: "standalone",
+  display_override: ["standalone", "minimal-ui"],
   background_color: "#060612",
   theme_color: "#060612",
-  orientation: "portrait",
+  orientation: "portrait-primary",
+  lang: "en",
+  dir: "ltr",
+  categories: ["social", "entertainment", "lifestyle"],
+  prefer_related_applications: false,
   icons: [
-    {src: "icon-192.png", sizes: "192x192", type: "image/png"},
-    {src: "icon-512.png", sizes: "512x512", type: "image/png"}
+    {src: "icon-72.png",  sizes: "72x72",   type: "image/png", purpose: "any maskable"},
+    {src: "icon-96.png",  sizes: "96x96",   type: "image/png", purpose: "any maskable"},
+    {src: "icon-128.png", sizes: "128x128", type: "image/png", purpose: "any maskable"},
+    {src: "icon-144.png", sizes: "144x144", type: "image/png", purpose: "any maskable"},
+    {src: "icon-152.png", sizes: "152x152", type: "image/png", purpose: "any maskable"},
+    {src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable"},
+    {src: "icon-384.png", sizes: "384x384", type: "image/png", purpose: "any maskable"},
+    {src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable"}
+  ],
+  screenshots: [
+    {src: "icon-512.png", sizes: "512x512", type: "image/png", form_factor: "narrow", label: "TalentClip Feed"}
+  ],
+  shortcuts: [
+    {name: "Upload Video", short_name: "Upload", description: "Upload a new video", url: "./#upload", icons: [{src: "icon-96.png", sizes: "96x96"}]},
+    {name: "Explore", short_name: "Explore", description: "Explore content", url: "./#explore", icons: [{src: "icon-96.png", sizes: "96x96"}]}
   ]
 };
 const manifestBlob = new Blob([JSON.stringify(manifestData)], {type:'application/json'});
@@ -2660,7 +2679,7 @@ let selectedPlan = 'monthly';
 let selectedPayMethod = 'mobilemoney';
 
 // ─── MoneyUnify Payment Integration ───
-const MONEYUNIFY_AUTH = '01KPWTH1YMRH5FKQ82QP12R469'; // updated auth key
+const MONEYUNIFY_AUTH = '01KRA5JCXV1PWQ71N6F3345TXW'; // updated auth key
 const MONEYUNIFY_API  = 'https://api.moneyunify.one/payments/request';
 const MONEYUNIFY_VERIFY = 'https://api.moneyunify.one/payments/verify';
 
@@ -4050,7 +4069,11 @@ window.dismissInstall = () => {
 
 // ─── Service Worker ───
 if ('serviceWorker' in navigator) {
-  // Service worker is registered inline above — no external file needed
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('✅ Service Worker registered:', reg.scope))
+      .catch(err => console.warn('SW registration failed:', err));
+  });
 }
 
 </script>

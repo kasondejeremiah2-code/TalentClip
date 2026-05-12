@@ -1,34 +1,51 @@
 {
-  "name": "TalentClip 🔥",
+  "name": "TalentClip",
   "short_name": "TalentClip",
-  "description": "Share your talent with the world. Post videos, photos, go live and earn money as a creator in Zambia.",
-  "start_url": "/",
-  "scope": "/",
+  "description": "Show your talent. Inspire the world. A social media platform for Zambian creators.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#060612",
   "theme_color": "#060612",
   "orientation": "portrait-primary",
   "lang": "en",
-  "categories": ["social", "entertainment", "video"],
+  "dir": "ltr",
+  "categories": ["social", "entertainment", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
+    {"src": "icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any maskable"},
     {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any maskable"},
     {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "TalentClip Home Feed"
+    }
   ],
   "shortcuts": [
     {
       "name": "Upload Video",
       "short_name": "Upload",
-      "description": "Post a new video",
-      "url": "/?action=upload",
-      "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
+      "description": "Upload a new video",
+      "url": "./#upload",
+      "icons": [{"src": "icon-96.png", "sizes": "96x96"}]
     },
     {
       "name": "Explore",
-      "short_name": "Explore", 
-      "description": "Browse latest content",
-      "url": "/?action=explore",
-      "icons": [{"src": "icon-192.png", "sizes": "192x192"}]
+      "short_name": "Explore",
+      "description": "Explore content",
+      "url": "./#explore",
+      "icons": [{"src": "icon-96.png", "sizes": "96x96"}]
     }
-  ],
-  "prefer_related_applications": false
+  ]
 }
