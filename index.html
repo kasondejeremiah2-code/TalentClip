@@ -2,55 +2,40 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>TalentClip 2.0 🔥</title>
+<!-- FULLSCREEN PWA — covers status bar on Android & iOS like TikTok -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>TalentClip</title>
 
-<!-- PWA -->
+<!-- PWA core -->
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#060612">
+<meta name="description" content="Show your talent. Inspire the world. 🔥">
+
+<!-- Android fullscreen -->
 <meta name="mobile-web-app-capable" content="yes">
+
+<!-- iOS fullscreen — hides Safari chrome completely -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TalentClip">
-<meta name="description" content="Share your talent with the world 🔥">
-<link rel="manifest" href="manifest.json">
+
+<!-- iOS icons -->
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+<!-- Splash screens for iOS (prevents white flash) -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Service Worker registration -->
 <script>
-// Create manifest dynamically so no external file needed
-const manifestData = {
-  name: "TalentClip",
-  short_name: "TalentClip",
-  description: "Show your talent. Inspire the world. A social media platform for Zambian creators.",
-  start_url: "./",
-  scope: "./",
-  display: "standalone",
-  display_override: ["standalone", "minimal-ui"],
-  background_color: "#060612",
-  theme_color: "#060612",
-  orientation: "portrait-primary",
-  lang: "en",
-  dir: "ltr",
-  categories: ["social", "entertainment", "lifestyle"],
-  prefer_related_applications: false,
-  icons: [
-    {src: "icon-72.png",  sizes: "72x72",   type: "image/png", purpose: "any maskable"},
-    {src: "icon-96.png",  sizes: "96x96",   type: "image/png", purpose: "any maskable"},
-    {src: "icon-128.png", sizes: "128x128", type: "image/png", purpose: "any maskable"},
-    {src: "icon-144.png", sizes: "144x144", type: "image/png", purpose: "any maskable"},
-    {src: "icon-152.png", sizes: "152x152", type: "image/png", purpose: "any maskable"},
-    {src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable"},
-    {src: "icon-384.png", sizes: "384x384", type: "image/png", purpose: "any maskable"},
-    {src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable"}
-  ],
-  screenshots: [
-    {src: "icon-512.png", sizes: "512x512", type: "image/png", form_factor: "narrow", label: "TalentClip Feed"}
-  ],
-  shortcuts: [
-    {name: "Upload Video", short_name: "Upload", description: "Upload a new video", url: "./#upload", icons: [{src: "icon-96.png", sizes: "96x96"}]},
-    {name: "Explore", short_name: "Explore", description: "Explore content", url: "./#explore", icons: [{src: "icon-96.png", sizes: "96x96"}]}
-  ]
-};
-const manifestBlob = new Blob([JSON.stringify(manifestData)], {type:'application/json'});
-const manifestURL = URL.createObjectURL(manifestBlob);
-document.querySelector('link[rel="manifest"]').href = manifestURL;
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./pwabuilder-sw.js')
+        .then(reg => console.log('✅ SW registered:', reg.scope))
+        .catch(err => console.log('SW error:', err));
+    });
+  }
 </script>
 
 <!-- ═══════════════════════════════════════════════
@@ -80,9 +65,51 @@ document.querySelector('link[rel="manifest"]').href = manifestURL;
 :root{
   --primary:#00c6ff;--accent:#ff00c8;--bg:#060612;--card:#0e0e1f;
   --card2:#161628;--text:#f0f0ff;--muted:#6b6b9a;
+  /* Safe area insets — covers notch/status bar on iPhone & Android */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;}
+
+/* TRUE FULLSCREEN — like TikTok. Covers status bar on all devices */
+html{
+  height: 100%;
+  height: -webkit-fill-available;
+  background: #060612;
+  overflow: hidden;
+}
+body{
+  font-family:'Outfit',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow:hidden;
+  /* Expand into status bar area */
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  /* Push content below status bar when NOT in PWA mode */
+  padding-top: var(--sat);
+}
+
+/* In standalone PWA — remove all browser chrome padding */
+@media all and (display-mode: standalone) {
+  body {
+    padding-top: 0;
+    /* Expand to fill the ENTIRE screen including behind status bar */
+    height: 100vh;
+    height: 100dvh;
+  }
+  /* Navbar sits above home indicator on iPhone */
+  .navbar {
+    padding-bottom: var(--sab);
+    height: calc(62px + var(--sab));
+  }
+  .page {
+    padding-bottom: calc(62px + var(--sab));
+  }
+}
 
 #loader{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;}
 .llogo{font-family:'Bebas Neue';font-size:80px;background:linear-gradient(135deg,#00c6ff,#ff00c8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:6px;}
@@ -91,7 +118,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
 .lbar-fill{height:100%;width:0%;background:linear-gradient(90deg,#00c6ff,#ff00c8);animation:lfill 1.4s ease forwards;}
 @keyframes lfill{to{width:100%;}}
 
-.page{display:none;height:100vh;overflow-y:scroll;-webkit-overflow-scrolling:touch;overflow-x:hidden;padding-bottom:62px;}
+.page{display:none;height:100vh;height:100dvh;overflow-y:scroll;-webkit-overflow-scrolling:touch;overflow-x:hidden;padding-bottom:62px;}
 .page.active{display:block;}
 
 .hdr{position:sticky;top:0;z-index:50;background:rgba(6,6,18,0.92);backdrop-filter:blur(14px);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.05);}
