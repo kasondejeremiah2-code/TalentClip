@@ -942,10 +942,9 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
     <div class="menu-st" id="menuSt">Not signed in</div>
   </div>
   <div class="menu-body">
-    <button class="mbtn" style="background:linear-gradient(135deg,#1a1a3e,#2a0a4e);border:1px solid rgba(0,198,255,.2);font-size:14px;" onclick="closeMenu();openPage('settingsPage')">⚙️ Settings</button>
+    <button class="mbtn" style="background:linear-gradient(135deg,#00c6ff,#7b00ff);font-size:14px;" onclick="closeMenu();openPage('settingsPage')">⚙️ Settings</button>
     <button class="mbtn" style="background:linear-gradient(135deg,#7b00ff,#ff00c8);" onclick="closeMenu();openPage('monetizePage')">⭐ Go Pro / Become a Member</button>
     <button class="mbtn" id="menuLiveBtn" style="display:none;background:linear-gradient(135deg,#ff0000,#ff00c8);" onclick="closeMenu();startLive()">🔴 Go Live</button>
-    <button class="mbtn" id="menuEarnBtn" style="display:none;background:linear-gradient(135deg,#00c853,#00c6ff);color:#fff;font-weight:700;" onclick="closeMenu();openPage('earningsPage')">💰 My Earnings</button>
     <button class="mbtn" id="menuSettingsBtn" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--muted);font-size:13px;" onclick="closeMenu();openPage('earningsPage')">📊 Creator Dashboard</button>
     <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('termsPage')">📋 Terms & Conditions</button>
     <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('privacyPage')">🔒 Privacy Policy</button>
@@ -957,7 +956,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
 </div>
 
 <!-- ═══ SETTINGS PAGE ═══ -->
-<div id="settingsPage" class="page" style="display:none;padding-bottom:80px;">
+<div id="settingsPage" class="page" style="padding-bottom:80px;background:var(--bg);">
   <div style="display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid rgba(255,255,255,.07);">
     <button onclick="openPage('profile')" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;">←</button>
     <span style="font-size:18px;font-weight:800;">Settings</span>
@@ -1559,8 +1558,7 @@ async function loadProfile(uid) {
     document.getElementById('profEditBtn').style.display = isOwn?'block':'none';
     const earnBtn = document.getElementById('profEarnBtn');
     if (earnBtn) earnBtn.style.display = 'none';
-    const menuEarnBtn = document.getElementById('menuEarnBtn');
-    if (menuEarnBtn) menuEarnBtn.style.display = isOwn ? 'block' : 'none';
+
     const liveBtn = document.getElementById('profLiveBtn');
     if (liveBtn) liveBtn.style.display = 'none'; // Go Live moved to menu
     // Show Go Live in ☰ menu for verified owners only
