@@ -497,16 +497,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
     <button class="etab" id="etab-Cars" onclick="switchExploreTab('Cars','🚗','Cars')">🚗 Cars</button>
     <button class="etab" id="etab-random" onclick="switchExploreTab('random','🎲','random')" style="background:linear-gradient(135deg,rgba(123,0,255,.3),rgba(255,0,200,.3));border-color:rgba(255,0,200,.4);">🎲 Random</button>
   </div>
-  <!-- Content type toggle -->
-  <div style="display:flex;gap:8px;padding:8px 14px;background:var(--bg);">
-    <button class="etab on" id="ctype-all" onclick="switchContentType('all')" style="font-size:12px;padding:6px 14px;">📱 All</button>
-    <button class="etab" id="ctype-video" onclick="switchContentType('video')" style="font-size:12px;padding:6px 14px;">📹 Videos</button>
-    <button class="etab" id="ctype-photo" onclick="switchContentType('photo')" style="font-size:12px;padding:6px 14px;">📸 Photos</button>
-  </div>
-  <!-- Feed container — videos use snap scroll, photos use grid -->
+  <!-- Snap feed — full screen, always visible -->
   <div id="exploreVideoFeed" class="tt-snap" style="display:block;position:fixed;top:0;left:0;right:0;bottom:0;height:100vh;z-index:50;"></div>
-  <div id="exploreVidBack" onclick="closeExploreVideo()" style="position:fixed;top:16px;left:14px;z-index:55;background:rgba(0,0,0,.5);border-radius:50%;width:38px;height:38px;display:none;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:20px;backdrop-filter:blur(4px);">←</div>
-  <div id="explorePhotoGrid" class="feed-grid" style="display:none;padding-bottom:80px;"></div>
+  <!-- kept in DOM so old references don't crash, just hidden -->
+  <div id="exploreVidBack" style="display:none;"></div>
+  <div id="explorePhotoGrid" style="display:none;"></div>
 </div>
 
 <!-- UPLOAD PICKER -->
@@ -947,19 +942,85 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
     <div class="menu-st" id="menuSt">Not signed in</div>
   </div>
   <div class="menu-body">
-    <input class="minp" id="menuUname" placeholder="Change username...">
-    <textarea class="minp" id="menuBio" placeholder="Write your bio..." maxlength="150" style="min-height:70px;"></textarea>
-    <button class="mbtn" onclick="saveProfile()">💾 Save Profile</button>
+    <button class="mbtn" style="background:linear-gradient(135deg,#1a1a3e,#2a0a4e);border:1px solid rgba(0,198,255,.2);font-size:14px;" onclick="closeMenu();openPage('settingsPage')">⚙️ Settings</button>
     <button class="mbtn" style="background:linear-gradient(135deg,#7b00ff,#ff00c8);" onclick="closeMenu();openPage('monetizePage')">⭐ Go Pro / Become a Member</button>
-    <button class="mbtn" id="menuLoginBtn" onclick="loginUser()">🔐 Sign in with Google</button>
-    <button class="mbtn out" onclick="logoutUser()">🚪 Sign Out</button>
     <button class="mbtn" id="menuLiveBtn" style="display:none;background:linear-gradient(135deg,#ff0000,#ff00c8);" onclick="closeMenu();startLive()">🔴 Go Live</button>
     <button class="mbtn" id="menuEarnBtn" style="display:none;background:linear-gradient(135deg,#00c853,#00c6ff);color:#fff;font-weight:700;" onclick="closeMenu();openPage('earningsPage')">💰 My Earnings</button>
     <button class="mbtn" id="menuSettingsBtn" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--muted);font-size:13px;" onclick="closeMenu();openPage('earningsPage')">📊 Creator Dashboard</button>
     <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('termsPage')">📋 Terms & Conditions</button>
     <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('privacyPage')">🔒 Privacy Policy</button>
     <button class="mbtn" style="background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:12px;" onclick="closeMenu();openPage('contactPage')">📧 Contact Us</button>
+    <button class="mbtn" id="menuLoginBtn" onclick="loginUser()">🔐 Sign in with Google</button>
+    <button class="mbtn out" onclick="logoutUser()">🚪 Sign Out</button>
     <button class="mbtn out" onclick="closeMenu()">✕ Close</button>
+  </div>
+</div>
+
+<!-- ═══ SETTINGS PAGE ═══ -->
+<div id="settingsPage" class="page" style="display:none;padding-bottom:80px;">
+  <div style="display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid rgba(255,255,255,.07);">
+    <button onclick="openPage('profile')" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;">←</button>
+    <span style="font-size:18px;font-weight:800;">Settings</span>
+  </div>
+
+  <!-- Profile Picture -->
+  <div style="padding:20px 16px 0;">
+    <div style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:12px;font-weight:700;">PROFILE PHOTO</div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div style="position:relative;cursor:pointer;" onclick="requireLogin(()=>document.getElementById('profPicInput').click())">
+        <img id="settingsAv" src="https://ui-avatars.com/api/?name=U&background=0e0e1f&color=00c6ff" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(0,198,255,.3);">
+        <div style="position:absolute;bottom:0;right:0;background:var(--primary);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;">✏️</div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:14px;" id="settingsNamePreview">Your Name</div>
+        <div style="font-size:12px;color:var(--muted);">Tap photo to change</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:1px;background:rgba(255,255,255,.06);margin:20px 0;"></div>
+
+  <!-- Username -->
+  <div style="padding:0 16px;">
+    <div style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;font-weight:700;">USERNAME</div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;margin-bottom:6px;">
+      <input id="settingsUname" maxlength="30" placeholder="Enter username..." style="background:none;border:none;color:#fff;font-size:15px;font-family:'Outfit',sans-serif;width:100%;outline:none;font-weight:600;">
+    </div>
+    <div id="unameCountdown" style="font-size:11px;color:var(--muted);padding:0 4px;min-height:16px;"></div>
+  </div>
+
+  <div style="height:1px;background:rgba(255,255,255,.06);margin:16px 0;"></div>
+
+  <!-- Bio -->
+  <div style="padding:0 16px;">
+    <div style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;font-weight:700;">BIO</div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;margin-bottom:6px;">
+      <textarea id="settingsBio" maxlength="150" placeholder="Tell the world about yourself... 🔥" style="background:none;border:none;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;width:100%;outline:none;resize:none;min-height:80px;line-height:1.6;"></textarea>
+    </div>
+    <div id="bioCharCount" style="font-size:11px;color:var(--muted);text-align:right;padding:0 4px;">0 / 150</div>
+  </div>
+
+  <div style="height:1px;background:rgba(255,255,255,.06);margin:16px 0;"></div>
+
+  <!-- Website / Link -->
+  <div style="padding:0 16px;">
+    <div style="font-size:11px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;font-weight:700;">WEBSITE LINK</div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;">
+      <input id="settingsLink" maxlength="100" placeholder="https://yoursite.com" type="url" style="background:none;border:none;color:#fff;font-size:14px;font-family:'Outfit',sans-serif;width:100%;outline:none;">
+    </div>
+  </div>
+
+  <div style="height:1px;background:rgba(255,255,255,.06);margin:16px 0;"></div>
+
+  <!-- Save Button -->
+  <div style="padding:0 16px 30px;">
+    <button onclick="saveSettings()" style="width:100%;padding:16px;background:linear-gradient(135deg,#00c6ff,#7b00ff);border:none;border-radius:16px;color:#fff;font-size:16px;font-weight:800;font-family:'Outfit',sans-serif;cursor:pointer;letter-spacing:.5px;">Save Changes</button>
+  </div>
+
+  <!-- Danger Zone -->
+  <div style="padding:0 16px 40px;">
+    <div style="font-size:11px;letter-spacing:2px;color:#ff4444;margin-bottom:12px;font-weight:700;">ACCOUNT</div>
+    <button onclick="logoutUser()" style="width:100%;padding:14px;background:rgba(255,50,50,.08);border:1px solid rgba(255,50,50,.2);border-radius:14px;color:#ff6666;font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;">🚪 Sign Out</button>
   </div>
 </div>
 
@@ -1286,12 +1347,9 @@ function setMenuUI(user, data) {
     document.getElementById('menuNm').textContent = 'Guest';
     document.getElementById('menuSt').textContent = 'Not signed in';
     document.getElementById('menuLoginBtn').style.display = 'block';
-    document.getElementById('menuUname').value = '';
-    document.getElementById('menuBio').value = '';
     document.getElementById('menuAv').src = 'https://ui-avatars.com/api/?name=G&background=0e0e1f&color=00c6ff';
     return;
   }
-  // Use every possible name source — never fall back to Guest
   const name = data?.displayName || user.displayName || user.email?.split('@')[0] || ('User_'+user.uid.slice(0,5));
   const photo = data?.photoURL || user.photoURL || '';
   const av = photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name.charAt(0)||'K')}&background=0e0e1f&color=00c6ff`;
@@ -1299,34 +1357,115 @@ function setMenuUI(user, data) {
   document.getElementById('menuNm').textContent = name;
   document.getElementById('menuSt').textContent = '✅ Signed in as ' + name;
   document.getElementById('menuLoginBtn').style.display = 'none';
-  document.getElementById('menuUname').value = data?.displayName || name;
-  document.getElementById('menuBio').value = data?.bio || '';
 }
 
 // ─── Profile ───
-window.saveProfile = async () => {
+// ─── Settings Page ───────────────────────────────────────────
+window.loadSettings = async () => {
   if (!currentUser) { openLoginGate(); return; }
-  const name = document.getElementById('menuUname').value.trim();
-  const bio = document.getElementById('menuBio').value.trim();
-  if (!name) { toast('⚠️ Please enter a username'); return; }
-  try {
-    await updateDoc(doc(db,'users',currentUser.uid),{
-      displayName: name,
-      bio: bio
-    });
-    // Update UI immediately without waiting for loadProfile
-    document.getElementById('profName').textContent = name;
-    document.getElementById('profBio').textContent = bio || 'No bio yet.';
-    document.getElementById('menuNm').textContent = name;
-    document.getElementById('menuSt').textContent = '✅ Signed in as ' + name;
-    toast('✅ Profile saved!');
-    closeMenu();
-    loadProfile(currentUser.uid);
-  } catch(e) {
-    console.error('Save profile error:', e);
-    toast('❌ Error saving: ' + e.message);
+  const snap = await getDoc(doc(db,'users',currentUser.uid));
+  const d = snap.data() || {};
+
+  // Populate fields
+  const sAv = document.getElementById('settingsAv');
+  const sNm = document.getElementById('settingsNamePreview');
+  if (sAv) sAv.src = d.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent((d.displayName||'U').charAt(0))}&background=0e0e1f&color=00c6ff`;
+  if (sNm) sNm.textContent = d.displayName || 'Your Name';
+
+  const uInp = document.getElementById('settingsUname');
+  const bInp = document.getElementById('settingsBio');
+  const lInp = document.getElementById('settingsLink');
+  if (uInp) uInp.value = d.displayName || '';
+  if (bInp) bInp.value = d.bio || '';
+  if (lInp) lInp.value = d.websiteLink || '';
+
+  // Bio char counter
+  if (bInp) {
+    const bioCount = document.getElementById('bioCharCount');
+    bInp.oninput = () => { if (bioCount) bioCount.textContent = bInp.value.length + ' / 150'; };
+    if (bioCount) bioCount.textContent = (d.bio||'').length + ' / 150';
+  }
+
+  // 30-day username cooldown check
+  const countdown = document.getElementById('unameCountdown');
+  const nameLastChanged = d.nameLastChanged?.toMillis ? d.nameLastChanged.toMillis() : (d.nameLastChanged || 0);
+  const daysSince = (Date.now() - nameLastChanged) / (1000 * 60 * 60 * 24);
+  const daysLeft = Math.ceil(30 - daysSince);
+
+  if (nameLastChanged && daysSince < 30) {
+    if (uInp) { uInp.disabled = true; uInp.style.color = 'var(--muted)'; uInp.style.cursor = 'not-allowed'; }
+    if (countdown) countdown.innerHTML = `🔒 Username locked — can change again in <b style="color:#ff9500;">${daysLeft} day${daysLeft===1?'':'s'}</b>`;
+  } else {
+    if (uInp) { uInp.disabled = false; uInp.style.color = '#fff'; uInp.style.cursor = 'text'; }
+    if (countdown) countdown.innerHTML = nameLastChanged ? `✅ You can change your username` : `✏️ Set your username`;
   }
 };
+
+window.saveSettings = async () => {
+  if (!currentUser) { openLoginGate(); return; }
+  const btn = document.querySelector('#settingsPage button[onclick="saveSettings()"]');
+  const origText = btn?.textContent;
+  if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+
+  try {
+    const snap = await getDoc(doc(db,'users',currentUser.uid));
+    const d = snap.data() || {};
+
+    const newName = document.getElementById('settingsUname')?.value.trim();
+    const newBio  = document.getElementById('settingsBio')?.value.trim();
+    const newLink = document.getElementById('settingsLink')?.value.trim();
+
+    if (!newName) { toast('⚠️ Username cannot be empty'); if(btn){btn.textContent=origText;btn.disabled=false;} return; }
+    if (newName.length < 3) { toast('⚠️ Username must be at least 3 characters'); if(btn){btn.textContent=origText;btn.disabled=false;} return; }
+
+    const updates = { bio: newBio, websiteLink: newLink };
+
+    // Only update username if it changed AND cooldown has passed
+    const nameLastChanged = d.nameLastChanged?.toMillis ? d.nameLastChanged.toMillis() : (d.nameLastChanged || 0);
+    const daysSince = (Date.now() - nameLastChanged) / (1000 * 60 * 60 * 24);
+    const nameChanged = newName !== d.displayName;
+
+    if (nameChanged) {
+      if (nameLastChanged && daysSince < 30) {
+        const daysLeft = Math.ceil(30 - daysSince);
+        toast(`🔒 Username locked for ${daysLeft} more day${daysLeft===1?'':'s'}`);
+        if(btn){btn.textContent=origText;btn.disabled=false;}
+        return;
+      }
+      updates.displayName = newName;
+      updates.nameLastChanged = serverTimestamp();
+    }
+
+    await updateDoc(doc(db,'users',currentUser.uid), updates);
+
+    // Update all visible UI
+    const finalName = updates.displayName || d.displayName;
+    document.getElementById('profName').textContent = finalName;
+    document.getElementById('profBio').textContent = newBio || 'No bio yet.';
+    document.getElementById('menuNm').textContent = finalName;
+    document.getElementById('menuSt').textContent = '✅ ' + finalName;
+    document.getElementById('settingsNamePreview').textContent = finalName;
+    const av = d.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName.charAt(0))}&background=0e0e1f&color=00c6ff`;
+    document.getElementById('settingsAv').src = av;
+
+    // Refresh cooldown display
+    if (nameChanged) {
+      const uInp = document.getElementById('settingsUname');
+      const countdown = document.getElementById('unameCountdown');
+      if (uInp) { uInp.disabled = true; uInp.style.color = 'var(--muted)'; }
+      if (countdown) countdown.innerHTML = `🔒 Username locked — can change again in <b style="color:#ff9500;">30 days</b>`;
+    }
+
+    toast('✅ Profile saved!');
+  } catch(e) {
+    toast('❌ Error: ' + e.message);
+  } finally {
+    if (btn) { btn.textContent = origText; btn.disabled = false; }
+  }
+};
+
+// Keep saveProfile as alias so any old calls don't crash
+window.saveProfile = window.saveSettings;
 
 window.changeProfPic = async () => {
   if (!currentUser) return;
@@ -1338,6 +1477,8 @@ window.changeProfPic = async () => {
     await updateDoc(doc(db,'users',currentUser.uid),{photoURL:url});
     document.getElementById('profAv').src=url;
     document.getElementById('menuAv').src=url;
+    const sAv = document.getElementById('settingsAv');
+    if (sAv) sAv.src = url;
     toast('Profile photo updated ✅');
   } catch(e) { toast('Upload error: '+e.message); }
 };
@@ -1906,129 +2047,20 @@ window.switchExploreTab = (cat, icon, tabId) => {
 };
 
 window.switchContentType = (type) => {
-  exploreContentType = type;
-  document.querySelectorAll('.etab[id^="ctype-"]').forEach(b => b.classList.remove('on'));
-  document.getElementById('ctype-' + type)?.classList.add('on');
-  loadExploreFeed();
+  // Content type toggle removed — explore is always snap feed
+  // Kept as a no-op so any lingering HTML references don't crash
 };
 
 async function loadExploreFeed() {
-  const videoWrap = document.getElementById('exploreVideoFeed');
-  const photoGrid = document.getElementById('explorePhotoGrid');
-
-  if (exploreContentType === 'photo') {
-    videoWrap.style.display = 'none';
-    photoGrid.style.display = 'grid';
-    loadExplorePhotos();
-  } else if (exploreContentType === 'video') {
-    videoWrap.style.display = 'block';
-    photoGrid.style.display = 'none';
-    loadTikTokFeed(exploreCategory);
-  } else {
-    // ALL — show photos in grid on top, videos below as TikTok
-    videoWrap.style.display = 'none';
-    photoGrid.style.display = 'none';
-    loadExploreAll();
-  }
+  // Explore is now always a full-screen TikTok-style snap feed, same as categories.
+  // No grid, no overview. Ads are full-screen scrollable slides every 5 videos.
+  loadTikTokFeed(exploreCategory);
 }
 
-async function loadExploreAll() {
-  // Combined grid of photos + video thumbnails, mixed
-  const photoGrid = document.getElementById('explorePhotoGrid');
-  photoGrid.style.display = 'grid';
-  photoGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);">Loading...</div>';
-
-  try {
-    let q;
-    if (exploreCategory) {
-      q = query(collection(db,'posts'), where('category','==',exploreCategory), limit(40));
-    } else {
-      q = query(collection(db,'posts'), limit(40));
-    }
-    const snap = await getDocs(q);
-    photoGrid.innerHTML = '';
-    if (snap.empty) {
-      photoGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">No posts yet in this category.<br>Be the first! 🚀</div>';
-      return;
-    }
-    // Shuffle for random feel
-    let posts = snap.docs.map(d => ({id:d.id,...d.data()}));
-    posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-    if (!exploreCategory) posts = posts.sort(() => Math.random() - 0.5);
-
-    window._exploreAllPosts = posts; // store for correct video click
-    posts.forEach(post => {
-      const el = document.createElement('div');
-      el.className = 'fg-item';
-      const verifiedBadge = ''; // Badges disabled
-      const boostedBadge = post.boosted ? '<div class="boost-badge">🚀</div>' : '';
-
-      if (post.type === 'photo' && post.mediaUrl) {
-        const aTag = post.uid ? `<div class="fg-author" onclick="event.stopPropagation();viewUserProfile('${post.uid}')">@${post.authorName||'Creator'}</div>` : '';
-        el.innerHTML = `<img src="${post.mediaUrl}" loading="lazy">${verifiedBadge}${boostedBadge}<div class="fg-overlay"><div class="fg-caption">${post.caption||''}</div><div class="fg-likes">❤️ ${fmt(post.likes||0)}</div>${aTag}</div>`;
-        attachDoubleTap(el, post.mediaUrl, ()=>{const fp=allPosts.filter(p=>p.type==='photo'&&p.mediaUrl);window._photoFeed=fp;window._photoIdx=fp.findIndex(p=>p.id===post.id);openPhotoModal(post);});
-      } else {
-        // Video thumbnail from Cloudinary
-        const vThumb2 = getVideoThumb(post.mediaUrl);
-        el.innerHTML = `
-          <div style="width:100%;height:100%;position:relative;background:#0d0d20;">
-            ${vThumb2 ? '<img src="'+vThumb2+'" style="width:100%;height:100%;object-fit:cover;">' : ''}
-            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
-              <div style="width:36px;height:36px;background:rgba(0,0,0,.55);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">▶</div>
-            </div>
-          </div>
-          ${verifiedBadge}${boostedBadge}
-          <div class="fg-overlay"><div class="fg-likes">❤️ ${fmt(post.likes||0)} &nbsp; 👁 ${fmt(post.views||0)}</div></div>`;
-        el.onclick = () => {
-          // Open standalone feed starting from THIS video
-          const allVideos = (window._exploreAllPosts||[]).filter(p=>p.type==='video'&&p.mediaUrl);
-          const startIdx = Math.max(0, allVideos.findIndex(p=>p.id===post.id));
-          const ordered = [...allVideos.slice(startIdx), ...allVideos.slice(0, startIdx)];
-          if(ordered.length > 0) {
-            openVideoFeedPage(ordered, 'Videos', 'tiktokPage');
-          } else {
-            exploreContentType = 'video';
-            document.getElementById('explorePhotoGrid').style.display = 'none';
-            document.getElementById('exploreVideoFeed').style.display = 'block';
-            loadTikTokFeed(exploreCategory);
-          }
-        };
-      }
-      photoGrid.appendChild(el);
-    });
-  } catch(e) {
-    photoGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">Error loading feed</div>`;
-  }
-}
-
-async function loadExplorePhotos() {
-  const photoGrid = document.getElementById('explorePhotoGrid');
-  photoGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);">Loading...</div>';
-  try {
-    let q;
-    if (exploreCategory) {
-      q = query(collection(db,'posts'), where('type','==','photo'), where('category','==',exploreCategory), limit(40));
-    } else {
-      q = query(collection(db,'posts'), where('type','==','photo'), limit(40));
-    }
-    const snap = await getDocs(q);
-    photoGrid.innerHTML = '';
-    if (snap.empty) { photoGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">No photos yet. Upload one! 📸</div>'; return; }
-    let posts = snap.docs.map(d => ({id:d.id,...d.data()}));
-    posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-    if (!exploreCategory) posts = posts.sort(() => Math.random() - 0.5);
-    posts.forEach(post => {
-      const el = document.createElement('div');
-      el.className = 'fg-item';
-      const aTag = post.uid ? `<div class="fg-author" onclick="event.stopPropagation();viewUserProfile('${post.uid}')">@${post.authorName||'Creator'}</div>` : '';
-      el.innerHTML = `<img src="${post.mediaUrl}" loading="lazy"><div class="fg-overlay"><div class="fg-caption">${post.caption||''}</div><div class="fg-likes">❤️ ${fmt(post.likes||0)}</div>${aTag}</div>`;
-      attachDoubleTap(el, post.mediaUrl, ()=>{const fp=posts.filter(p=>p.type==='photo'&&p.mediaUrl);window._photoFeed=fp;window._photoIdx=fp.findIndex(p=>p.id===post.id);openPhotoModal(post);});
-      photoGrid.appendChild(el);
-    });
-  } catch(e) { photoGrid.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);">Could not load photos</div>'; }
-}
-
-
+// loadExploreAll and loadExplorePhotos replaced by loadTikTokFeed above.
+// Stub them so any remaining calls don't crash.
+async function loadExploreAll() { loadTikTokFeed(exploreCategory); }
+async function loadExplorePhotos() { loadTikTokFeed(exploreCategory); }
 
 async function loadTikTokFeed(cat) {
   const wrap = document.getElementById('exploreVideoFeed');
@@ -2796,12 +2828,19 @@ window.processPayment = async () => {
                : currentPayType === 'boost'   ? 120
                : (selectedPlan === 'yearly'   ? 700 : 200);
 
-  // Fix phone format — MoneyUnify needs EXACTLY 12 digits: 260XXXXXXXXX
+  // Fix phone format — MoneyUnify needs LOCAL 10-digit Zambian format: 0772028998
   let p = phone.replace(/[\s\-\+]/g,'');  // strip spaces, dashes, plus
-  if (p.startsWith('260')) { /* already correct */ }
-  else if (p.startsWith('0')) p = '260' + p.slice(1);
-  else p = '260' + p;
+  if (p.startsWith('260')) p = '0' + p.slice(3); // 260772... → 0772...
+  if (!p.startsWith('0')) p = '0' + p;            // 772... → 0772...
+  p = p.slice(0, 10);                              // force exactly 10 digits
   const formattedPhone = p;
+
+  if (formattedPhone.length !== 10) {
+    toast('\u274c Invalid phone number. Use format: 0772028998');
+    btn.disabled = false;
+    btn.textContent = btnText;
+    return;
+  }
 
   console.log('Paying with phone:', formattedPhone, 'amount:', amount);
 
@@ -3825,6 +3864,7 @@ window.openPage = (id) => {
   if(id==='profile' && !window._viewingUser){viewingUid=currentUser?.uid||null;loadProfile(viewingUid);}
   if(id==='tiktokPage') loadExploreFeed();
   if(id==='earningsPage') loadEarningsPage();
+  if(id==='settingsPage') loadSettings();
 };
 
 async function loadEarningsPage() {
@@ -4067,14 +4107,179 @@ window.dismissInstall = () => {
   document.getElementById('installBanner').style.display = 'none';
 };
 
-// ─── Service Worker ───
+// ─── Service Worker (inline — no external sw.js needed) ───
 if ('serviceWorker' in navigator) {
+  const SW_VERSION = 'talentclip-v1';
+
+  const swCode = `
+const CACHE = '${SW_VERSION}';
+const SHELL = [
+  './',
+  './index.html',
+  'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700&display=swap'
+];
+
+// Install: cache the app shell
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting())
+  );
+});
+
+// Activate: delete old caches
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+// Fetch: network-first for API/Firebase, cache-first for shell assets
+self.addEventListener('fetch', e => {
+  const url = e.request.url;
+
+  // Never intercept Firebase, Cloudinary, or external API calls
+  if (
+    url.includes('firebaseio.com') ||
+    url.includes('googleapis.com/identitytoolkit') ||
+    url.includes('securetoken.googleapis.com') ||
+    url.includes('cloudinary.com') ||
+    url.includes('firebasestorage.googleapis.com') ||
+    url.includes('moneyunify') ||
+    e.request.method !== 'GET'
+  ) return;
+
+  // For navigation requests: network first, fall back to cached index.html
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match('./index.html') || caches.match('./'))
+    );
+    return;
+  }
+
+  // For other assets: cache first, network fallback
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (!res || res.status !== 200 || res.type === 'opaque') return res;
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      });
+    })
+  );
+});
+`;
+
+  const swBlob = new Blob([swCode], { type: 'application/javascript' });
+  const swURL  = URL.createObjectURL(swBlob);
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('✅ Service Worker registered:', reg.scope))
+    navigator.serviceWorker.register(swURL, { scope: './' })
+      .then(reg => {
+        console.log('✅ Service Worker registered with caching:', reg.scope);
+
+        // Listen for the SW to take control and confirm caching is live
+        if (navigator.serviceWorker.controller) {
+          console.log('✅ SW already controlling — offline cache active');
+        }
+      })
       .catch(err => console.warn('SW registration failed:', err));
   });
 }
+
+// ─── Offline / Online detection banner ───
+(function () {
+  // Inject banner styles
+  const style = document.createElement('style');
+  style.textContent = `
+    #offlineBanner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      transition: transform .35s cubic-bezier(.4,0,.2,1), opacity .35s;
+      transform: translateY(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    #offlineBanner.offline {
+      background: linear-gradient(90deg, #1a0a00, #3d1500);
+      border-bottom: 1px solid rgba(255,100,0,.35);
+      color: #ffb347;
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #offlineBanner.back-online {
+      background: linear-gradient(90deg, #001a0a, #003d1a);
+      border-bottom: 1px solid rgba(0,200,83,.35);
+      color: #00e676;
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #offlineBanner .ob-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: obPulse 1.4s ease-in-out infinite;
+    }
+    #offlineBanner.offline .ob-dot   { background: #ff6a00; }
+    #offlineBanner.back-online .ob-dot { background: #00e676; animation: none; }
+    @keyframes obPulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .4; transform: scale(.7); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Inject banner element
+  const banner = document.createElement('div');
+  banner.id = 'offlineBanner';
+  banner.innerHTML = '<div class="ob-dot"></div><span id="offlineBannerText"></span>';
+  document.body.appendChild(banner);
+
+  let hideTimer = null;
+
+  function showBanner(mode) {
+    clearTimeout(hideTimer);
+    banner.classList.remove('offline', 'back-online');
+    banner.classList.add(mode);
+    if (mode === 'offline') {
+      document.getElementById('offlineBannerText').textContent = 'You\'re offline — browsing cached content';
+    } else {
+      document.getElementById('offlineBannerText').textContent = 'Back online! 🔥';
+      hideTimer = setTimeout(() => {
+        banner.classList.remove('offline', 'back-online');
+        banner.style.opacity = '0';
+        banner.style.transform = 'translateY(-100%)';
+      }, 3000);
+    }
+  }
+
+  window.addEventListener('offline', () => showBanner('offline'));
+  window.addEventListener('online',  () => showBanner('back-online'));
+
+  // Show immediately if already offline on page load
+  if (!navigator.onLine) showBanner('offline');
+})();
 
 </script>
 
