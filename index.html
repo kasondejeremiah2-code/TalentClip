@@ -133,6 +133,13 @@ body{
 
 .fab{display:none !important;}
 
+/* ── Video Editor ── */
+.ed-filter{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;min-width:62px;font-size:11px;color:var(--muted);padding:6px 4px;border-radius:10px;border:2px solid transparent;transition:.2s;}
+.ed-filter.on{border-color:var(--primary);color:#fff;}
+.ed-filter-thumb{width:54px;height:54px;border-radius:8px;}
+.ed-speed{flex:1;padding:10px 0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:.2s;}
+.ed-speed.on{background:var(--primary);border-color:var(--primary);color:#fff;}
+
 .search-wrap{padding:14px 16px;}
 .search-inp{width:100%;padding:12px 18px;border-radius:50px;border:1px solid rgba(255,255,255,0.06);background:var(--card2);color:var(--text);font-size:15px;font-family:'Outfit',sans-serif;outline:none;}
 .search-inp::placeholder{color:var(--muted);}
@@ -244,7 +251,8 @@ body{
 .cm-inp{flex:1;padding:11px 16px;border-radius:24px;border:1px solid rgba(255,255,255,.1);background:var(--card2);color:var(--text);font-size:14px;font-family:'Outfit',sans-serif;outline:none;}
 .cm-send{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#00c6ff,#ff00c8);border:none;color:#fff;font-size:16px;cursor:pointer;}
 
-.upload-opts{padding:24px 16px;display:flex;flex-direction:column;gap:14px;}
+.upload-opts{padding:20px 16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .uopt{padding:20px;border-radius:20px;background:var(--card);border:1px solid rgba(255,255,255,.06);cursor:pointer;display:flex;align-items:center;gap:16px;}
 .uopt:active{transform:scale(.97);}
 .uico{font-size:36px;}
@@ -533,16 +541,32 @@ body{
 
 <!-- UPLOAD PICKER -->
 <div id="upload" class="page">
-  <div class="hdr"><div style="width:30px;"></div><div class="hdr-title">Upload</div><div class="hdr-menu" onclick="openMenu()">☰</div></div>
+  <div class="hdr"><div style="width:30px;"></div><div class="hdr-title">Create</div><div class="hdr-menu" onclick="openMenu()">☰</div></div>
   <div class="upload-opts">
-    <div class="uopt" onclick="requireLogin(openVideoUpload)">
-      <div class="uico">📹</div>
-      <div><div class="utitle">Upload Video</div><div class="usub">TikTok-style video feed</div></div>
-    </div>
-    <div class="uopt" onclick="requireLogin(openPhotoUpload)">
+    <!-- Gallery video — no capture attribute = opens file picker -->
+    <label class="uopt" onclick="if(!currentUser){event.preventDefault();openLoginGate();}else{openPage('videoUploadPage');}">
+      <input type="file" accept="video/*" hidden onchange="onVideoChosen(this)">
+      <div class="uico">📁</div>
+      <div><div class="utitle">Gallery Video</div><div class="usub">Pick from your gallery</div></div>
+    </label>
+    <!-- Camera video — capture="environment" forces camera -->
+    <label class="uopt" onclick="if(!currentUser){event.preventDefault();openLoginGate();}else{openPage('videoUploadPage');}">
+      <input type="file" accept="video/*" capture="environment" hidden onchange="onVideoChosen(this)">
+      <div class="uico">🎬</div>
+      <div><div class="utitle">Record Video</div><div class="usub">Use your camera</div></div>
+    </label>
+    <!-- Gallery photo -->
+    <label class="uopt" onclick="if(!currentUser){event.preventDefault();openLoginGate();}else{openPage('photoUploadPage');}">
+      <input type="file" accept="image/*" hidden onchange="onPhotoChosen(this)">
+      <div class="uico">🖼️</div>
+      <div><div class="utitle">Gallery Photo</div><div class="usub">Pick from your gallery</div></div>
+    </label>
+    <!-- Camera photo — capture="environment" forces camera -->
+    <label class="uopt" onclick="if(!currentUser){event.preventDefault();openLoginGate();}else{openPage('photoUploadPage');}">
+      <input type="file" accept="image/*" capture="environment" hidden onchange="onPhotoChosen(this)">
       <div class="uico">📸</div>
-      <div><div class="utitle">Upload Photo</div><div class="usub">Share a photo with caption</div></div>
-    </div>
+      <div><div class="utitle">Take Photo</div><div class="usub">Use your camera</div></div>
+    </label>
   </div>
 </div>
 
@@ -550,10 +574,9 @@ body{
 <div id="videoUploadPage" class="page">
   <div class="hdr"><div class="hdr-back" onclick="openPage('upload')">←</div><div class="hdr-title">Upload Video</div><div style="width:30px;"></div></div>
   <div class="form-wrap">
-    <label class="flabel">
-      <input type="file" id="videoInput" accept="video/*" hidden onchange="onVideoChosen()">
-      <span class="fi">📁</span><span id="videoFileName">Tap to choose a video</span>
-    </label>
+    <!-- Hidden file input — triggered by gallery/camera buttons above -->
+    <input type="file" id="videoInput" accept="video/*" hidden onchange="onVideoChosen()">
+    <div id="videoFileName" style="text-align:center;color:var(--muted);padding:20px 0 10px;font-size:13px;">Choosing video...</div>
     <input class="finp" type="text" id="videoTitle" placeholder="Title...">
     <textarea class="finp" id="videoDesc" placeholder="Description..." style="min-height:75px;"></textarea>
     <select class="fsel" id="categorySelect">
@@ -575,14 +598,154 @@ body{
   </div>
 </div>
 
+<!-- ═══ VIDEO EDITOR PAGE ═══ -->
+<div id="videoEditorPage" class="page" style="background:#000;padding-bottom:0;">
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(0,0,0,.9);border-bottom:1px solid rgba(255,255,255,.07);">
+    <button onclick="openPage('videoUploadPage')" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;">←</button>
+    <span style="font-size:16px;font-weight:800;flex:1;">Edit Video</span>
+    <button onclick="applyEditorAndReturn()" style="background:linear-gradient(135deg,#00c6ff,#7b00ff);border:none;border-radius:20px;padding:8px 20px;color:#fff;font-weight:700;font-size:13px;font-family:'Outfit',sans-serif;cursor:pointer;">Done ✓</button>
+  </div>
+
+  <!-- Video preview -->
+  <div style="position:relative;width:100%;background:#000;display:flex;align-items:center;justify-content:center;min-height:300px;">
+    <video id="editorVideo" style="width:100%;max-height:340px;object-fit:contain;display:block;" playsinline muted loop></video>
+    <!-- Text overlay preview -->
+    <div id="editorTextOverlay" style="position:absolute;bottom:50px;left:0;right:0;text-align:center;font-size:22px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8);pointer-events:none;padding:0 16px;display:none;"></div>
+  </div>
+
+  <!-- Playback controls -->
+  <div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:10px;background:#111;">
+    <button onclick="editorSeek(-5)" style="background:rgba(255,255,255,.1);border:none;border-radius:50%;width:38px;height:38px;color:#fff;font-size:16px;cursor:pointer;">⏪</button>
+    <button id="edPlayBtn" onclick="toggleEditorPlay()" style="background:var(--primary);border:none;border-radius:50%;width:46px;height:46px;color:#fff;font-size:20px;cursor:pointer;">▶</button>
+    <button onclick="editorSeek(5)" style="background:rgba(255,255,255,.1);border:none;border-radius:50%;width:38px;height:38px;color:#fff;font-size:16px;cursor:pointer;">⏩</button>
+  </div>
+
+  <!-- Scrollable tools -->
+  <div style="overflow-y:auto;height:calc(100vh - 420px);background:#0a0a1a;">
+
+    <!-- Filters -->
+    <div style="padding:14px 16px 0;">
+      <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">FILTERS</div>
+      <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;">
+        <div class="ed-filter on" onclick="applyFilter('none')" style="filter:none;">
+          <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#333,#666);"></div>
+          <span>Original</span>
+        </div>
+        <div class="ed-filter" onclick="applyFilter('vivid')">
+          <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#ff6b35,#f7c59f);filter:saturate(2);"></div>
+          <span>Vivid</span>
+        </div>
+        <div class="ed-filter" onclick="applyFilter('cool')">
+          <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#00c6ff,#0072ff);filter:hue-rotate(30deg);"></div>
+          <span>Cool</span>
+        </div>
+        <div class="ed-filter" onclick="applyFilter('warm')">
+          <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#f7971e,#ffd200);filter:sepia(.6);"></div>
+          <span>Warm</span>
+        </div>
+        <div class="ed-filter" onclick="applyFilter('bw')">
+          <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#eee,#555);filter:grayscale(1);"></div>
+          <span>B&W</span>
+        </div>
+        <div class="ed-filter" onclick="applyFilter('dramatic')">
+          <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#1a1a2e,#16213e);filter:contrast(1.5) brightness(.8);"></div>
+          <span>Drama</span>
+        </div>
+        <div class="ed-filter" onclick="applyFilter('neon')">
+          <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#ff00c8,#7b00ff);filter:saturate(3) hue-rotate(280deg);"></div>
+          <span>Neon</span>
+        </div>
+        <div class="ed-filter" onclick="applyFilter('vintage')">
+          <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#d4a574,#8b6914);filter:sepia(1) contrast(.9);"></div>
+          <span>Vintage</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Brightness & Contrast -->
+    <div style="padding:14px 16px 0;">
+      <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">ADJUSTMENTS</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>☀️ Brightness</span><span id="brightnessVal">100%</span></div>
+          <input type="range" id="brightnessSlider" min="50" max="150" value="100" oninput="updateVideoFilter()" style="width:100%;accent-color:var(--primary);">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>◑ Contrast</span><span id="contrastVal">100%</span></div>
+          <input type="range" id="contrastSlider" min="50" max="200" value="100" oninput="updateVideoFilter()" style="width:100%;accent-color:var(--primary);">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>🎨 Saturation</span><span id="saturateVal">100%</span></div>
+          <input type="range" id="saturateSlider" min="0" max="200" value="100" oninput="updateVideoFilter()" style="width:100%;accent-color:var(--primary);">
+        </div>
+      </div>
+    </div>
+
+    <!-- Speed -->
+    <div style="padding:14px 16px 0;">
+      <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">SPEED</div>
+      <div style="display:flex;gap:8px;">
+        <button class="ed-speed on" onclick="setEditorSpeed(0.5)">0.5×</button>
+        <button class="ed-speed" onclick="setEditorSpeed(1)">1×</button>
+        <button class="ed-speed" onclick="setEditorSpeed(1.5)">1.5×</button>
+        <button class="ed-speed" onclick="setEditorSpeed(2)">2×</button>
+      </div>
+    </div>
+
+    <!-- Text Overlay -->
+    <div style="padding:14px 16px 0;">
+      <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">TEXT OVERLAY</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input id="editorTextInput" type="text" maxlength="60" placeholder="Add text to video..." style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;color:#fff;font-family:'Outfit',sans-serif;font-size:14px;outline:none;">
+        <button onclick="applyTextOverlay()" style="background:var(--primary);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;">Add</button>
+      </div>
+      <!-- Text colour pickers -->
+      <div style="display:flex;gap:8px;">
+        <div onclick="setTextColor('#ffffff')" style="width:28px;height:28px;border-radius:50%;background:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.4);"></div>
+        <div onclick="setTextColor('#ff00c8')" style="width:28px;height:28px;border-radius:50%;background:#ff00c8;cursor:pointer;"></div>
+        <div onclick="setTextColor('#00c6ff')" style="width:28px;height:28px;border-radius:50%;background:#00c6ff;cursor:pointer;"></div>
+        <div onclick="setTextColor('#ffd200')" style="width:28px;height:28px;border-radius:50%;background:#ffd200;cursor:pointer;"></div>
+        <div onclick="setTextColor('#00ff88')" style="width:28px;height:28px;border-radius:50%;background:#00ff88;cursor:pointer;"></div>
+        <div onclick="setTextColor('#ff4444')" style="width:28px;height:28px;border-radius:50%;background:#ff4444;cursor:pointer;"></div>
+      </div>
+    </div>
+
+    <!-- Trim -->
+    <div style="padding:14px 16px 0;">
+      <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">TRIM</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Start (s)</div>
+          <input type="number" id="trimStart" min="0" value="0" step="1" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;color:#fff;font-family:'Outfit',sans-serif;font-size:14px;outline:none;" oninput="previewTrim()">
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">End (s)</div>
+          <input type="number" id="trimEnd" min="1" value="60" step="1" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;color:#fff;font-family:'Outfit',sans-serif;font-size:14px;outline:none;" oninput="previewTrim()">
+        </div>
+      </div>
+      <div id="trimInfo" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+    </div>
+
+    <!-- Flip / Rotate -->
+    <div style="padding:14px 16px 24px;">
+      <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">TRANSFORM</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="toggleFlipH()" id="flipHBtn" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;">↔ Flip H</button>
+        <button onclick="toggleFlipV()" id="flipVBtn" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;">↕ Flip V</button>
+        <button onclick="rotateEditor()" id="rotateBtn" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;">↻ Rotate</button>
+      </div>
+    </div>
+
+  </div><!-- end scrollable tools -->
+</div>
+
 <!-- PHOTO UPLOAD -->
 <div id="photoUploadPage" class="page">
   <div class="hdr"><div class="hdr-back" onclick="openPage('upload')">←</div><div class="hdr-title">Upload Photo</div><div style="width:30px;"></div></div>
   <div class="form-wrap">
-    <label class="flabel">
-      <input type="file" id="photoInput" accept="image/*" hidden onchange="previewPhoto()">
-      <span class="fi" id="photoIcon">📸</span><span id="photoLabel">Tap to choose a photo</span>
-    </label>
+    <!-- Hidden inputs — triggered by gallery/camera choice -->
+    <input type="file" id="photoInput" accept="image/*" hidden onchange="onPhotoChosen()">
+    <div id="photoLabel" style="text-align:center;color:var(--muted);padding:20px 0 10px;font-size:13px;">Choosing photo...</div>
     <img id="photoPreview" style="width:100%;max-height:280px;object-fit:cover;border-radius:14px;display:none;">
     <textarea class="finp" id="photoCaption" placeholder="Write a caption..." style="min-height:90px;"></textarea>
     <select class="fsel" id="photoCategory">
@@ -1706,6 +1869,18 @@ async function loadTikTokFeedForUser(uid) {
             <div class="ico" style="font-size:28px;">↗️</div>
             <div class="lbl">Share</div>
           </div>
+          <div class="tt-btn" onclick="ttBookmark('${p.id}',this)">
+            <div class="ico" id="bm-${p.id}" style="font-size:28px;">🔖</div>
+            <div class="lbl">Save</div>
+          </div>
+          <div class="tt-btn" onclick="ttDuet('${p.id}','${(p.authorName||'').replace(/'/g,'')}')">
+            <div class="ico" style="font-size:26px;">🎭</div>
+            <div class="lbl">Duet</div>
+          </div>
+          <div class="tt-btn" onclick="ttGift('${p.id}','${(p.authorName||'').replace(/'/g,'')}')">
+            <div class="ico" style="font-size:26px;">🎁</div>
+            <div class="lbl">Gift</div>
+          </div>
         </div>`;
       const vid1 = slide.querySelector('video');
       attachDoubleTap(vid1, null, () => { vid1.paused ? vid1.play() : vid1.pause(); });
@@ -1901,6 +2076,22 @@ function openVideoFeedPage(posts, title, backPage) {
           <div class="ico" style="font-size:28px;">↗️</div>
           <div class="lbl">Share</div>
         </div>
+        <div class="tt-btn" onclick="ttBookmark('${p.id}',this)">
+          <div class="ico" id="bm-${p.id}" style="font-size:28px;">🔖</div>
+          <div class="lbl">Save</div>
+        </div>
+        <div class="tt-btn" onclick="ttDuet('${p.id}','${(p.authorName||'').replace(/'/g,'')}')">
+          <div class="ico" style="font-size:26px;">🎭</div>
+          <div class="lbl">Duet</div>
+        </div>
+        <div class="tt-btn" onclick="ttGift('${p.id}','${(p.authorName||'').replace(/'/g,'')}')">
+          <div class="ico" style="font-size:26px;">🎁</div>
+          <div class="lbl">Gift</div>
+        </div>
+        <div class="tt-btn" onclick="ttFollowFromFeed('${p.uid||''}',this)">
+          <div class="ico" id="ff-${p.uid||''}" style="font-size:24px;">➕</div>
+          <div class="lbl">Follow</div>
+        </div>
       </div>`;
     const vid = slide.querySelector('video');
     attachDoubleTap(vid, null, () => { vid.paused ? vid.play() : vid.pause(); });
@@ -2000,6 +2191,18 @@ function loadCategoryFeed(cat) {
               <div class="ico">↗️</div>
               <div class="lbl">Share</div>
             </div>
+            <div class="tt-btn" onclick="ttBookmark('${post.id}',this)">
+              <div class="ico" id="bm-${post.id}">🔖</div>
+              <div class="lbl">Save</div>
+            </div>
+            <div class="tt-btn" onclick="ttDuet('${post.id}','${(post.authorName||'').replace(/'/g,'')}')">
+              <div class="ico">🎭</div>
+              <div class="lbl">Duet</div>
+            </div>
+            <div class="tt-btn" onclick="ttGift('${post.id}','${(post.authorName||'').replace(/'/g,'')}')">
+              <div class="ico">🎁</div>
+              <div class="lbl">Gift</div>
+            </div>
           </div>`;
         // Double-tap to open full photo modal
         const img = slide.querySelector('img');
@@ -2030,6 +2233,18 @@ function loadCategoryFeed(cat) {
             <div class="tt-btn" onclick="shareTTPost('${post.id}','${(post.title||post.caption||'').replace(/'/g,'')}')">
               <div class="ico">↗️</div>
               <div class="lbl">Share</div>
+            </div>
+            <div class="tt-btn" onclick="ttBookmark('${post.id}',this)">
+              <div class="ico" id="bm-${post.id}">🔖</div>
+              <div class="lbl">Save</div>
+            </div>
+            <div class="tt-btn" onclick="ttDuet('${post.id}','${(post.authorName||'').replace(/'/g,'')}')">
+              <div class="ico">🎭</div>
+              <div class="lbl">Duet</div>
+            </div>
+            <div class="tt-btn" onclick="ttGift('${post.id}','${(post.authorName||'').replace(/'/g,'')}')">
+              <div class="ico">🎁</div>
+              <div class="lbl">Gift</div>
             </div>
           </div>`;
         const vid = slide.querySelector('video');
@@ -2121,12 +2336,18 @@ async function loadTikTokFeed(cat) {
     const rsnap = await getDocs(rq);
     randomPosts = rsnap.docs.map(d => ({id:d.id,...d.data()}));
 
-    // 4. Merge: following first → boosted → random (no duplicates)
+    // 4. Merge: following first → boosted → random (no duplicates), newest first
     const seen = new Set();
     const allPosts = [];
     [...followingPosts, ...boostedPosts, ...randomPosts].forEach(p => {
       if (!seen.has(p.id)) { seen.add(p.id); allPosts.push(p); }
     });
+    // Sort all (except pinned following/boosted stay at top, rest newest first)
+    const pinned = allPosts.filter(p => p._fromFollow || p._boosted);
+    const rest   = allPosts.filter(p => !p._fromFollow && !p._boosted);
+    rest.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    allPosts.length = 0;
+    [...pinned, ...rest].forEach(p => allPosts.push(p));
 
     wrap.innerHTML = '';
     if (!allPosts.length) {
@@ -2177,6 +2398,18 @@ async function loadTikTokFeed(cat) {
           <div class="tt-btn" onclick="shareTTPost('${p.id}','${(p.title||p.caption||'').replace(/'/g,'')}')">
             <div class="ico">↗️</div>
             <div class="lbl">Share</div>
+          </div>
+          <div class="tt-btn" onclick="ttBookmark('${p.id}',this)">
+            <div class="ico" id="bm-${p.id}">🔖</div>
+            <div class="lbl">Save</div>
+          </div>
+          <div class="tt-btn" onclick="ttDuet('${p.id}','${(p.authorName||'').replace(/'/g,'')}')">
+            <div class="ico">🎭</div>
+            <div class="lbl">Duet</div>
+          </div>
+          <div class="tt-btn" onclick="ttGift('${p.id}','${(p.authorName||'').replace(/'/g,'')}')">
+            <div class="ico">🎁</div>
+            <div class="lbl">Gift</div>
           </div>
         </div>`;
       const vid2 = slide.querySelector('video');
@@ -2260,8 +2493,10 @@ function markAdWatched() {
 
 // Record a TOTAL view (everyone counts)
 async function recordTotalView(postId, authorUid) {
-  if (viewedThisSession.has('total_'+postId)) return;
-  viewedThisSession.add('total_'+postId);
+  // Deduplicate per session AND per localStorage (survives refresh)
+  const key = 'v_'+postId;
+  if (viewedThisSession.has(key)) return;
+  viewedThisSession.add(key);
   saveViewedSet();
   try {
     await updateDoc(doc(db,'posts',postId), { views: increment(1) });
@@ -2381,6 +2616,9 @@ async function recordAdImpression() {
 
 window.ttLike = async(postId, btn)=>{
   if(!currentUser){openLoginGate();return;}
+  // Animate — pop the heart
+  btn?.classList.remove('anim-like'); void btn?.offsetWidth; btn?.classList.add('anim-like');
+  setTimeout(()=>btn?.classList.remove('anim-like'), 500);
   const ico=btn.querySelector('.ico');
   const lbl=document.getElementById('ttlk-'+postId);
   const pRef=doc(db,'posts',postId);
@@ -2531,8 +2769,9 @@ async function renderComments(){
 window.submitPhotoComment=async()=>{
   if(!currentUser){openLoginGate();return;}
   if(!currentPost)return;
+  if(_isSpamming()){toast('⏳ Slow down! Max 5 comments per minute.');return;}
   const inp=document.getElementById('cmInp');
-  const text=inp.value.trim();
+  const text=_sanitize(inp.value||'');
   if(!text)return;
   inp.value='';
   const usnap=await getDoc(doc(db,'users',currentUser.uid));
@@ -2736,36 +2975,42 @@ let selectedPlan = 'monthly';
 let selectedPayMethod = 'mobilemoney';
 
 // ─── MoneyUnify Payment Integration ───
-const MONEYUNIFY_AUTH = '01KRA5JCXV1PWQ71N6F3345TXW'; // updated auth key
-const MONEYUNIFY_API  = 'https://api.moneyunify.one/payments/request';
+const MONEYUNIFY_AUTH   = '01KRA5JCXV1PWQ71N6F3345TXW';
+const MONEYUNIFY_API    = 'https://api.moneyunify.one/payments/request';
 const MONEYUNIFY_VERIFY = 'https://api.moneyunify.one/payments/verify';
 
 window.processPayment = async () => {
   if (!currentUser) { openLoginGate(); return; }
 
   const phone = document.getElementById('payPhone')?.value.trim();
-  if (!phone || phone.length < 10) {
-    toast('⚠️ Enter your mobile money number'); return;
-  }
+  if (!phone) { toast('⚠️ Enter your mobile money number'); return; }
 
   const btn = document.getElementById('payNowBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Sending request to your phone...';
+  const btnText = btn?.textContent || 'Pay Now';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending request...'; }
 
   const amount = currentPayType === 'premium' ? (selectedPlan === 'yearly' ? 700 : 200)
                : currentPayType === 'boost'   ? 120
                : (selectedPlan === 'yearly'   ? 700 : 200);
 
-  // MoneyUnify wants LOCAL 10-digit Zambian format: 0772028998
-  // NOT international format 260772028998
-  let p = phone.replace(/[\s\-\+]/g,'');
-  if (p.startsWith('260')) p = '0' + p.slice(3); // 260772... → 0772...
-  if (!p.startsWith('0')) p = '0' + p;            // 772... → 0772...
+  // Format to 10-digit local Zambian number: 0772028998
+  let p = phone.replace(/[\s\-\+]/g, '');
+  if (p.startsWith('260')) p = '0' + p.slice(3);
+  if (!p.startsWith('0'))  p = '0' + p;
+  p = p.slice(0, 10);
   const formattedPhone = p;
 
-  console.log('Paying with phone:', formattedPhone, '| amount:', amount, '| type:', currentPayType);
+  if (formattedPhone.length !== 10) {
+    toast('❌ Invalid number. Use format: 0772028998');
+    if (btn) { btn.disabled = false; btn.textContent = btnText; }
+    return;
+  }
 
-  const txRef = 'TC-' + currentUser.uid.slice(0,8) + '-' + Date.now();
+  const txRef = 'TC-' + currentUser.uid.slice(0, 8) + '-' + Date.now();
+  const desc  = currentPayType === 'boost' ? 'TalentClip Post Boost'
+              : `TalentClip ${selectedPlan === 'yearly' ? 'Yearly' : 'Monthly'} Premium`;
+
+  console.log('MoneyUnify → phone:', formattedPhone, '| amount:', amount, '| desc:', desc);
 
   try {
     const res = await fetch(MONEYUNIFY_API, {
@@ -2775,9 +3020,9 @@ window.processPayment = async () => {
         'Accept': 'application/json'
       },
       body: new URLSearchParams({
+        auth_id:    MONEYUNIFY_AUTH,
         from_payer: formattedPhone,
-        amount: String(amount),
-        auth_id: MONEYUNIFY_AUTH
+        amount:     String(amount)
       })
     });
 
@@ -2785,47 +3030,47 @@ window.processPayment = async () => {
     console.log('MoneyUnify response:', JSON.stringify(data));
 
     if (data.isError === true) {
-      const debugMsg = data.debug ? JSON.stringify(data.debug) : data.message;
-      throw new Error(debugMsg || 'Payment failed');
+      const msg = data.debug ? JSON.stringify(data.debug) : (data.message || 'Payment request failed');
+      throw new Error(msg);
     }
 
     const transactionId = data.data?.transaction_id;
-    if (!transactionId) throw new Error('No transaction ID — check auth key');
+    if (!transactionId) throw new Error('No transaction ID — check your MoneyUnify auth key');
 
-    btn.textContent = '📱 Check your phone — approve payment!';
-    toast('📱 Approve the payment prompt on your phone!');
+    if (btn) btn.textContent = '📱 Approve on your phone!';
+    toast('📱 Check your phone and approve the payment!');
 
-    // Save to Firestore — skip if offline
+    // Save pending record
     try {
-      await addDoc(collection(db,'payments'), {
+      await addDoc(collection(db, 'payments'), {
         uid: currentUser.uid, type: currentPayType, plan: selectedPlan,
         txRef, transactionId, amount, currency: 'ZMW',
         phone: formattedPhone, status: 'pending', createdAt: serverTimestamp()
       });
-    } catch(e) { console.log('Offline — payment record skipped'); }
+    } catch(e) { console.log('Offline — skipping Firestore record'); }
 
-    // Poll every 5 seconds for up to 60 seconds
+    // Poll every 5s for up to 60s
     let attempts = 0;
-    const pollInterval = setInterval(async () => {
+    const poll = setInterval(async () => {
       attempts++;
       try {
         const vRes = await fetch(MONEYUNIFY_VERIFY, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
-          body: new URLSearchParams({ transaction_id: transactionId, auth_id: MONEYUNIFY_AUTH })
+          body: new URLSearchParams({ auth_id: MONEYUNIFY_AUTH, transaction_id: transactionId })
         });
         const vData = await vRes.json();
         console.log('Verify', attempts, ':', vData.data?.status);
 
         if (vData.data?.status === 'successful') {
-          clearInterval(pollInterval);
+          clearInterval(poll);
           await applyPaymentReward(currentPayType, txRef, amount, transactionId);
         } else if (attempts >= 12) {
-          clearInterval(pollInterval);
-          toast('⏰ Timed out. If you approved it, contact support.');
-          btn.disabled = false; btn.textContent = 'Try Again 🔄';
+          clearInterval(poll);
+          toast('⏰ Timed out. If you approved, contact support with ref: ' + txRef);
+          if (btn) { btn.disabled = false; btn.textContent = 'Try Again 🔄'; }
         } else {
-          btn.textContent = `📱 Waiting... ${attempts * 5}s — approve on your phone`;
+          if (btn) btn.textContent = `📱 Waiting... ${attempts * 5}s — approve on your phone`;
         }
       } catch(e) { console.log('Verify error:', e); }
     }, 5000);
@@ -2833,129 +3078,7 @@ window.processPayment = async () => {
   } catch(e) {
     console.error('Payment error:', e);
     toast('❌ ' + (e.message || 'Payment failed. Try again.'));
-    btn.disabled = false; btn.textContent = 'Try Again 🔄';
-  }
-};
-
-window.processPayment = async () => {
-  if (!currentUser) { openLoginGate(); return; }
-
-  const phone = document.getElementById('payPhone')?.value.trim();
-  if (!phone || phone.length < 10) {
-    toast('⚠️ Enter your mobile money number'); return;
-  }
-
-  const btn = document.getElementById('payNowBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Sending request to your phone...';
-
-  const amount = currentPayType === 'premium' ? (selectedPlan === 'yearly' ? 700 : 200)
-               : currentPayType === 'boost'   ? 120
-               : (selectedPlan === 'yearly'   ? 700 : 200);
-
-  // Fix phone format — MoneyUnify needs LOCAL 10-digit Zambian format: 0772028998
-  let p = phone.replace(/[\s\-\+]/g,'');  // strip spaces, dashes, plus
-  if (p.startsWith('260')) p = '0' + p.slice(3); // 260772... → 0772...
-  if (!p.startsWith('0')) p = '0' + p;            // 772... → 0772...
-  p = p.slice(0, 10);                              // force exactly 10 digits
-  const formattedPhone = p;
-
-  if (formattedPhone.length !== 10) {
-    toast('\u274c Invalid phone number. Use format: 0772028998');
-    btn.disabled = false;
-    btn.textContent = btnText;
-    return;
-  }
-
-  console.log('Paying with phone:', formattedPhone, 'amount:', amount);
-
-  const txRef = 'TC-' + currentUser.uid.slice(0,8) + '-' + Date.now();
-
-  try {
-    // Step 1: Request payment — sends USSD prompt to user's phone
-    const res = await fetch(MONEYUNIFY_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json'
-      },
-      body: new URLSearchParams({
-        from_payer: formattedPhone,
-        amount: String(amount),
-        auth_id: MONEYUNIFY_AUTH
-      })
-    });
-
-    const data = await res.json();
-    console.log('MoneyUnify response:', data);
-
-    if (data.isError === true) {
-      // Show the actual debug message for easier fixing
-      const debugMsg = data.debug ? JSON.stringify(data.debug) : data.message;
-      throw new Error(debugMsg || 'Payment request failed');
-    }
-
-    const transactionId = data.data?.transaction_id;
-    if (!transactionId) throw new Error('No transaction ID returned');
-
-    btn.textContent = '📱 Check your phone — approve payment!';
-    toast('📱 Approve payment on your phone now!');
-
-    // Save pending payment — skip if offline
-    try {
-      await addDoc(collection(db,'payments'), {
-        uid: currentUser.uid,
-        type: currentPayType,
-        plan: selectedPlan,
-        txRef, transactionId,
-        amount, currency: 'ZMW',
-        phone: formattedPhone,
-        status: 'pending',
-        createdAt: serverTimestamp()
-      });
-    } catch(e) { console.log('Offline — payment record skipped, will retry'); }
-
-    // Step 2: Poll for confirmation every 5 seconds, max 60 seconds
-    let attempts = 0;
-    const maxAttempts = 12;
-
-    const pollInterval = setInterval(async () => {
-      attempts++;
-      try {
-        const vRes = await fetch(MONEYUNIFY_VERIFY, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json'
-          },
-          body: new URLSearchParams({
-            transaction_id: transactionId,
-            auth_id: MONEYUNIFY_AUTH
-          })
-        });
-
-        const vData = await vRes.json();
-        console.log('Verify attempt', attempts, ':', vData.data?.status);
-
-        if (vData.data?.status === 'successful') {
-          clearInterval(pollInterval);
-          await applyPaymentReward(currentPayType, txRef, amount, transactionId);
-        } else if (attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          toast('⏰ Timed out. If you approved it, contact support.');
-          btn.disabled = false;
-          btn.textContent = 'Try Again 🔄';
-        } else {
-          btn.textContent = `📱 Waiting... ${attempts * 5}s (approve on your phone)`;
-        }
-      } catch(e) { console.log('Verify error:', e); }
-    }, 5000);
-
-  } catch(e) {
-    console.error('Payment error:', e);
-    toast('❌ ' + (e.message || 'Payment failed. Try again.'));
-    btn.disabled = false;
-    btn.textContent = 'Try Again 🔄';
+    if (btn) { btn.disabled = false; btn.textContent = btnText; }
   }
 };
 
@@ -3175,6 +3298,7 @@ let _commentsUnsub = null;
 let _replyTo = null; // {commentId, authorName}
 
 window.openTTComments = async (postId) => {
+  animBtn(event?.currentTarget, 'anim-comment');
   if (!currentUser) { openLoginGate(); return; }
   _commentsPostId = postId;
   const drawer = document.getElementById('commentsDrawer');
@@ -3333,10 +3457,24 @@ window.submitReport = async (commentId, postId, reason) => {
   } catch(e){ toast('Could not report'); }
 };
 
+// ── Comment spam tracking + sanitizer ──────────────────────────
+const _commentTimestamps = [];
+function _isSpamming() {
+  const now = Date.now();
+  while(_commentTimestamps.length && now - _commentTimestamps[0] > 60000) _commentTimestamps.shift();
+  if(_commentTimestamps.length >= 5) return true;
+  _commentTimestamps.push(now);
+  return false;
+}
+function _sanitize(str) {
+  return str.replace(/<[^>]*>/g,'').replace(/[<>'"]/g,'').trim().slice(0,300);
+}
+
 window.submitComment = async () => {
   if (!currentUser) { openLoginGate(); return; }
+  if (_isSpamming()) { toast('⏳ Slow down! Max 5 comments per minute.'); return; }
   const input = document.getElementById('commentInput');
-  const text = input.value.trim();
+  const text = _sanitize(input.value);
   if (!text) return;
   if (!_commentsPostId) return;
   input.value = '';
@@ -3383,7 +3521,15 @@ window.submitComment = async () => {
   } catch(e){ console.error(e); toast('Could not post — check connection'); }
 };
 
+window.animBtn = (el, cls) => {
+  el = el || event?.currentTarget;
+  if(!el) return;
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls), 550);
+};
+
 window.shareTTPost = async (postId, title) => {
+  animBtn(event?.currentTarget, 'anim-share');
   const url = window.location.href.split('?')[0] + '?post=' + postId;
   const shareData = { title: title||'TalentClip 🔥', text: `Check this out on TalentClip: ${title||''}`, url };
   if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
@@ -3489,64 +3635,222 @@ window.viewUserProfile = async (uid) => {
   });
   await loadProfile(uid);
 };
-window.openVideoUpload=()=>openPage('videoUploadPage');
-window.openPhotoUpload=()=>{
-  document.getElementById('photoPreview').style.display='none';
-  document.getElementById('photoInput').value='';
-  document.getElementById('photoCaption').value='';
-  document.getElementById('photoCategory').value='';
-  document.getElementById('photoLabel').textContent='Tap to choose a photo';
-  openPage('photoUploadPage');
+// ─── Camera / Gallery upload openers ──────────────────────────
+window.openVideoUploadWithCamera = (useCamera) => {
+  openPage('videoUploadPage');
+  setTimeout(() => {
+    const inp = document.getElementById('videoInput');
+    if (useCamera) {
+      inp.setAttribute('capture','environment');
+      inp.removeAttribute('accept');
+      inp.setAttribute('accept','video/*');
+    } else {
+      inp.removeAttribute('capture');
+    }
+    inp.value = '';
+    inp.click();
+  }, 350);
 };
+window.openPhotoUploadWithCamera = (useCamera) => {
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('photoInput').value = '';
+  document.getElementById('photoCaption').value = '';
+  document.getElementById('photoCategory').value = '';
+  openPage('photoUploadPage');
+  setTimeout(() => {
+    const inp = document.getElementById('photoInput');
+    if (useCamera) {
+      inp.setAttribute('capture','environment');
+    } else {
+      inp.removeAttribute('capture');
+    }
+    inp.value = '';
+    inp.click();
+  }, 350);
+};
+// Keep old references alive
+window.openVideoUpload = () => openVideoUploadWithCamera(false);
+window.openPhotoUpload = () => openPhotoUploadWithCamera(false);
 
-window.onVideoChosen=()=>{
-  const inp = document.getElementById('videoInput');
-  const f = inp.files[0];
-  if(!f){document.getElementById('videoFileName').textContent='Tap to choose a video';return;}
+// ─── onVideoChosen — auto-redirects straight to editor ────────
+window.onVideoChosen = (inputEl) => {
+  // inputEl is the actual <input> element that triggered the change
+  const f = (inputEl && inputEl.files) ? inputEl.files[0] : document.getElementById('videoInput')?.files[0];
+  if (!f) return;
+  // Copy file into the main videoInput so uploadVideo() can still read it
+  window._chosenVideoFile = f;
 
-  // Reject files over 150MB immediately — too large even for trimming
-  const mb = f.size / (1024*1024);
-  if(mb > 150){
-    inp.value='';
-    window._trimmedVideoBlob = null;
-    document.getElementById('videoFileName').textContent='❌ File too large (max 150MB). Choose a shorter video.';
-    toast('❌ Video too large! Max 150MB');
-    return;
-  }
+  const mb = f.size / (1024 * 1024);
+  if (mb > 150) { toast('❌ Video too large! Max 150MB'); return; }
 
   const url = URL.createObjectURL(f);
   const tmp = document.createElement('video');
-  tmp.preload='metadata'; tmp.src=url;
-  tmp.onloadedmetadata=()=>{
+  tmp.preload = 'metadata'; tmp.src = url;
+  tmp.onloadedmetadata = () => {
     URL.revokeObjectURL(url);
     const dur = Math.round(tmp.duration);
-    const sizeMB = (f.size/(1024*1024)).toFixed(1);
+    window._editorVideoDuration = dur;
+    window._trimmedVideoBlob = null;
+    const trimEndEl = document.getElementById('trimEnd');
+    // Auto-cap trim at 60s
+    if (trimEndEl) trimEndEl.value = Math.min(dur, 60);
+    document.getElementById('videoFileName').textContent =
+      `${f.name} (${dur}s · ${mb.toFixed(1)}MB)`;
+    // ── Auto-open editor immediately — no button needed ──
+    openVideoEditor();
+  };
+  tmp.onerror = () => { URL.revokeObjectURL(url); toast('❌ Could not read video'); };
+};
 
-    if(dur <= 60 && mb <= 50){
-      // Perfect — under 60s and under 50MB
-      window._trimmedVideoBlob = null;
-      document.getElementById('videoFileName').textContent=`✅ ${f.name} (${dur}s · ${sizeMB}MB)`;
-    } else if(dur > 60){
-      // Trim to 60 seconds
-      document.getElementById('videoFileName').textContent=`✂️ Trimming to 60s... (${dur}s original)`;
-      trimVideoTo60(f).then(blob=>{
-        window._trimmedVideoBlob = blob;
-        const trimMB = (blob.size/(1024*1024)).toFixed(1);
-        document.getElementById('videoFileName').textContent=`✅ Trimmed to 60s (${trimMB}MB) — ready!`;
-      }).catch(()=>{
-        window._trimmedVideoBlob = null;
-        document.getElementById('videoFileName').textContent=`⚠️ Could not trim — using original (${dur}s)`;
-      });
-    } else {
-      // Under 60s but over 50MB — still upload, Cloudinary compresses
-      window._trimmedVideoBlob = null;
-      document.getElementById('videoFileName').textContent=`✅ ${f.name} (${dur}s · ${sizeMB}MB)`;
-    }
+// ─── Video Editor ─────────────────────────────────────────────────
+let _edFilter = 'none';
+let _edFlipH = false, _edFlipV = false, _edRotate = 0;
+let _edTextColor = '#ffffff';
+
+window.openVideoEditor = () => {
+  const f = window._chosenVideoFile || document.getElementById('videoInput')?.files[0];
+  if(!f){ toast('⚠️ Choose a video first'); return; }
+
+  const edVid = document.getElementById('editorVideo');
+  if(edVid._objectURL) URL.revokeObjectURL(edVid._objectURL);
+  edVid._objectURL = URL.createObjectURL(f);
+  edVid.src = edVid._objectURL;
+  edVid.load();
+
+  // Reset editor state
+  _edFilter='none'; _edFlipH=false; _edFlipV=false; _edRotate=0;
+  document.getElementById('brightnessSlider').value=100;
+  document.getElementById('contrastSlider').value=100;
+  document.getElementById('saturateSlider').value=100;
+  document.getElementById('brightnessVal').textContent='100%';
+  document.getElementById('contrastVal').textContent='100%';
+  document.getElementById('saturateVal').textContent='100%';
+  document.getElementById('editorTextOverlay').style.display='none';
+  document.getElementById('editorTextOverlay').textContent='';
+  document.getElementById('editorTextInput').value='';
+  document.getElementById('trimStart').value=0;
+  document.getElementById('trimEnd').value=window._editorVideoDuration||60;
+  document.getElementById('trimInfo').textContent='';
+  document.querySelectorAll('.ed-filter').forEach(el=>el.classList.remove('on'));
+  document.querySelector('.ed-filter')?.classList.add('on');
+  document.querySelectorAll('.ed-speed').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.ed-speed')[1]?.classList.add('on');
+  updateVideoFilter();
+  openPage('videoEditorPage');
+  setTimeout(()=>edVid.play(),400);
+};
+
+window.toggleEditorPlay = () => {
+  const v = document.getElementById('editorVideo');
+  const btn = document.getElementById('edPlayBtn');
+  if(v.paused){ v.play(); btn.textContent='⏸'; }
+  else { v.pause(); btn.textContent='▶'; }
+};
+
+window.editorSeek = (s) => {
+  const v = document.getElementById('editorVideo');
+  v.currentTime = Math.max(0, Math.min(v.duration||0, v.currentTime + s));
+};
+
+window.applyFilter = (name) => {
+  _edFilter = name;
+  document.querySelectorAll('.ed-filter').forEach(el=>el.classList.remove('on'));
+  event.currentTarget.classList.add('on');
+  updateVideoFilter();
+};
+
+window.updateVideoFilter = () => {
+  const b = document.getElementById('brightnessSlider').value;
+  const c = document.getElementById('contrastSlider').value;
+  const s = document.getElementById('saturateSlider').value;
+  document.getElementById('brightnessVal').textContent = b+'%';
+  document.getElementById('contrastVal').textContent   = c+'%';
+  document.getElementById('saturateVal').textContent   = s+'%';
+
+  const filterMap = {
+    none:     '',
+    vivid:    'saturate(2) ',
+    cool:     'hue-rotate(30deg) saturate(1.2) ',
+    warm:     'sepia(0.5) saturate(1.3) ',
+    bw:       'grayscale(1) ',
+    dramatic: 'contrast(1.4) brightness(0.85) ',
+    neon:     'saturate(3) hue-rotate(280deg) ',
+    vintage:  'sepia(0.8) contrast(0.9) saturate(0.8) ',
   };
-  tmp.onerror=()=>{
-    URL.revokeObjectURL(url);
-    document.getElementById('videoFileName').textContent='❌ Could not read video file';
-  };
+
+  const base = filterMap[_edFilter] || '';
+  const custom = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+  document.getElementById('editorVideo').style.filter = base + custom;
+
+  // Apply transform
+  const flipX = _edFlipH ? -1 : 1;
+  const flipY = _edFlipV ? -1 : 1;
+  document.getElementById('editorVideo').style.transform = `scaleX(${flipX}) scaleY(${flipY}) rotate(${_edRotate}deg)`;
+  // Store settings for upload
+  window._editorSettings = { filter: base+custom, transform: document.getElementById('editorVideo').style.transform,
+    brightness:b, contrast:c, saturate:s, filterName:_edFilter };
+};
+
+window.setEditorSpeed = (spd) => {
+  document.getElementById('editorVideo').playbackRate = spd;
+  document.querySelectorAll('.ed-speed').forEach(el=>el.classList.remove('on'));
+  event.currentTarget.classList.add('on');
+  window._editorSettings = {...(window._editorSettings||{}), speed: spd};
+};
+
+window.applyTextOverlay = () => {
+  const txt = document.getElementById('editorTextInput').value.trim();
+  const ov  = document.getElementById('editorTextOverlay');
+  if(!txt){ ov.style.display='none'; ov.textContent=''; return; }
+  ov.textContent = txt;
+  ov.style.color = _edTextColor;
+  ov.style.display = 'block';
+  window._editorSettings = {...(window._editorSettings||{}), overlayText: txt, overlayColor: _edTextColor};
+};
+
+window.setTextColor = (c) => {
+  _edTextColor = c;
+  const ov = document.getElementById('editorTextOverlay');
+  if(ov.style.display!=='none') ov.style.color = c;
+};
+
+window.previewTrim = () => {
+  const s = parseFloat(document.getElementById('trimStart').value)||0;
+  const e = parseFloat(document.getElementById('trimEnd').value)||0;
+  const v = document.getElementById('editorVideo');
+  const dur = v.duration || window._editorVideoDuration || 0;
+  if(e > dur) document.getElementById('trimEnd').value = Math.floor(dur);
+  if(s >= e)  document.getElementById('trimStart').value = Math.max(0, e-1);
+  const len = (parseFloat(document.getElementById('trimEnd').value) - parseFloat(document.getElementById('trimStart').value)).toFixed(1);
+  document.getElementById('trimInfo').textContent = `✂️ Clip will be ${len}s long`;
+  v.currentTime = parseFloat(document.getElementById('trimStart').value);
+  window._editorSettings = {...(window._editorSettings||{}), trimStart: parseFloat(document.getElementById('trimStart').value), trimEnd: parseFloat(document.getElementById('trimEnd').value)};
+};
+
+window.toggleFlipH = () => {
+  _edFlipH = !_edFlipH;
+  document.getElementById('flipHBtn').style.background = _edFlipH ? 'var(--primary)' : 'rgba(255,255,255,.06)';
+  updateVideoFilter();
+};
+window.toggleFlipV = () => {
+  _edFlipV = !_edFlipV;
+  document.getElementById('flipVBtn').style.background = _edFlipV ? 'var(--primary)' : 'rgba(255,255,255,.06)';
+  updateVideoFilter();
+};
+window.rotateEditor = () => {
+  _edRotate = (_edRotate + 90) % 360;
+  document.getElementById('rotateBtn').textContent = `↻ ${_edRotate}°`;
+  updateVideoFilter();
+};
+
+window.applyEditorAndReturn = () => {
+  // Save the editor settings so uploadVideo can embed CSS filter in the description meta
+  const edVid = document.getElementById('editorVideo');
+  edVid.pause();
+  // Store final settings for upload (filter, text overlay, trim)
+  window._videoEdited = true;
+  toast('✅ Edits saved! Fill in details and post.');
+  openPage('videoUploadPage');
 };
 
 async function trimVideoTo60(file){
@@ -3560,7 +3864,7 @@ async function trimVideoTo60(file){
       const ctx=canvas.getContext('2d');
       const stream=canvas.captureStream(25);
       const mimeType=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?'video/webm;codecs=vp9':'video/webm';
-      const rec=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:2500000});
+      const rec=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:8000000});
       const chunks=[];
       rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
       rec.onstop=()=>{URL.revokeObjectURL(url);resolve(new Blob(chunks,{type:'video/webm'}));};
@@ -3576,32 +3880,357 @@ async function trimVideoTo60(file){
   });
 }
 
-window.previewPhoto=()=>{
-  const file=document.getElementById('photoInput').files[0];
-  if(!file)return;
-  const r=new FileReader();
-  r.onload=e=>{
-    const p=document.getElementById('photoPreview');
-    p.src=e.target.result; p.style.display='block';
-    document.getElementById('photoLabel').textContent='✅ Photo selected';
+// ─── onPhotoChosen — auto-opens photo editor ──────────────────
+window.onPhotoChosen = (inputEl) => {
+  const file = (inputEl && inputEl.files) ? inputEl.files[0] : document.getElementById('photoInput')?.files[0];
+  if (!file) return;
+  window._chosenPhotoFile = file;
+  const r = new FileReader();
+  r.onload = e => {
+    document.getElementById('photoPreview').src = e.target.result;
+    document.getElementById('photoPreview').style.display = 'block';
+    document.getElementById('photoLabel').textContent = '✅ Photo selected';
+    // Auto-open photo editor
+    openPhotoEditor(e.target.result);
   };
   r.readAsDataURL(file);
 };
 
+// Keep old reference alive
+window.previewPhoto = () => window.onPhotoChosen();
+
+// ─── Photo Editor ──────────────────────────────────────────────
+let _photoEditDataURL = null;
+
+window.openPhotoEditor = (dataUrl) => {
+  _photoEditDataURL = dataUrl;
+  // Build photo editor modal on the fly
+  let modal = document.getElementById('photoEditorModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'photoEditorModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:300;background:#000;display:flex;flex-direction:column;overflow-y:auto;';
+    modal.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(0,0,0,.9);border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;">
+        <button onclick="closePhotoEditor()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;">←</button>
+        <span style="font-size:16px;font-weight:800;flex:1;">Edit Photo</span>
+        <button onclick="applyPhotoEdits()" style="background:linear-gradient(135deg,#00c6ff,#7b00ff);border:none;border-radius:20px;padding:8px 20px;color:#fff;font-weight:700;font-size:13px;font-family:'Outfit',sans-serif;cursor:pointer;">Done ✓</button>
+      </div>
+      <div style="flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#111;min-height:280px;">
+        <img id="photoEdPreview" style="max-width:100%;max-height:300px;object-fit:contain;transition:filter .3s;">
+      </div>
+      <div style="padding:14px 16px 0;flex-shrink:0;">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">FILTERS</div>
+        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;">
+          <div class="ed-filter on" onclick="applyPhotoFilter('none',this)" style="min-width:62px;">
+            <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#333,#666);"></div><span>Original</span>
+          </div>
+          <div class="ed-filter" onclick="applyPhotoFilter('saturate(2)',this)" style="min-width:62px;">
+            <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#ff6b35,#f7c59f);filter:saturate(2);"></div><span>Vivid</span>
+          </div>
+          <div class="ed-filter" onclick="applyPhotoFilter('hue-rotate(30deg) saturate(1.3)',this)" style="min-width:62px;">
+            <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#00c6ff,#0072ff);"></div><span>Cool</span>
+          </div>
+          <div class="ed-filter" onclick="applyPhotoFilter('sepia(0.5) saturate(1.4)',this)" style="min-width:62px;">
+            <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#f7971e,#ffd200);"></div><span>Warm</span>
+          </div>
+          <div class="ed-filter" onclick="applyPhotoFilter('grayscale(1)',this)" style="min-width:62px;">
+            <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#eee,#555);"></div><span>B&W</span>
+          </div>
+          <div class="ed-filter" onclick="applyPhotoFilter('contrast(1.5) brightness(0.85)',this)" style="min-width:62px;">
+            <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#1a1a2e,#444);"></div><span>Drama</span>
+          </div>
+          <div class="ed-filter" onclick="applyPhotoFilter('saturate(3) hue-rotate(280deg)',this)" style="min-width:62px;">
+            <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#ff00c8,#7b00ff);"></div><span>Neon</span>
+          </div>
+          <div class="ed-filter" onclick="applyPhotoFilter('sepia(0.8) contrast(0.9)',this)" style="min-width:62px;">
+            <div class="ed-filter-thumb" style="background:linear-gradient(135deg,#d4a574,#8b6914);"></div><span>Vintage</span>
+          </div>
+        </div>
+      </div>
+      <div style="padding:14px 16px 0;flex-shrink:0;">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">ADJUSTMENTS</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>☀️ Brightness</span><span id="pBrVal">100%</span></div>
+            <input type="range" id="pBrSlider" min="50" max="150" value="100" oninput="updatePhotoFilter()" style="width:100%;accent-color:var(--primary);">
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>◑ Contrast</span><span id="pCtVal">100%</span></div>
+            <input type="range" id="pCtSlider" min="50" max="200" value="100" oninput="updatePhotoFilter()" style="width:100%;accent-color:var(--primary);">
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>🎨 Saturation</span><span id="pSaVal">100%</span></div>
+            <input type="range" id="pSaSlider" min="0" max="200" value="100" oninput="updatePhotoFilter()" style="width:100%;accent-color:var(--primary);">
+          </div>
+        </div>
+      </div>
+      <div style="padding:14px 16px 0;flex-shrink:0;">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">TEXT OVERLAY</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input id="pTextInp" type="text" maxlength="60" placeholder="Add text..." style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;color:#fff;font-family:'Outfit',sans-serif;font-size:14px;outline:none;">
+          <button onclick="applyPhotoText()" style="background:var(--primary);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;">Add</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          ${['#ffffff','#ff00c8','#00c6ff','#ffd200','#00ff88','#ff4444'].map(c=>`<div onclick="setPhotoTextColor('${c}')" style="width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;flex-shrink:0;"></div>`).join('')}
+        </div>
+        <div id="pTextOverlay" style="text-align:center;font-size:20px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8);padding:8px;display:none;"></div>
+      </div>
+      <div style="padding:14px 16px 24px;flex-shrink:0;">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:700;margin-bottom:10px;">TRANSFORM</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="togglePhotoFlip()" id="pFlipBtn" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;">↔ Flip</button>
+          <button onclick="rotatePhoto()" id="pRotBtn" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;">↻ Rotate</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  let _pFlip=false, _pRot=0, _pFilter='', _pTextColor='#ffffff';
+  window._pFlip=_pFlip; window._pRot=_pRot; window._pFilter=_pFilter; window._pTextColor=_pTextColor;
+  modal.querySelector('#photoEdPreview').src = dataUrl;
+  modal.querySelector('#photoEdPreview').style.filter = '';
+  modal.querySelector('#photoEdPreview').style.transform = '';
+  modal.querySelectorAll('.ed-filter').forEach(el=>el.classList.remove('on'));
+  modal.querySelector('.ed-filter')?.classList.add('on');
+  modal.querySelector('#pBrSlider').value=100; modal.querySelector('#pBrVal').textContent='100%';
+  modal.querySelector('#pCtSlider').value=100; modal.querySelector('#pCtVal').textContent='100%';
+  modal.querySelector('#pSaSlider').value=100; modal.querySelector('#pSaVal').textContent='100%';
+  modal.querySelector('#pTextInp').value='';
+  modal.querySelector('#pTextOverlay').style.display='none';
+  modal.style.display='flex';
+};
+
+window.closePhotoEditor = () => {
+  const m = document.getElementById('photoEditorModal');
+  if (m) m.style.display='none';
+};
+
+window.applyPhotoFilter = (f, el) => {
+  window._pFilter = f;
+  document.querySelectorAll('#photoEditorModal .ed-filter').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  updatePhotoFilter();
+};
+window.updatePhotoFilter = () => {
+  const b = document.getElementById('pBrSlider').value;
+  const c = document.getElementById('pCtSlider').value;
+  const s = document.getElementById('pSaSlider').value;
+  document.getElementById('pBrVal').textContent = b+'%';
+  document.getElementById('pCtVal').textContent = c+'%';
+  document.getElementById('pSaVal').textContent = s+'%';
+  const img = document.getElementById('photoEdPreview');
+  img.style.filter = `${window._pFilter||''} brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+};
+window.applyPhotoText = () => {
+  const txt = document.getElementById('pTextInp').value.trim();
+  const ov  = document.getElementById('pTextOverlay');
+  if (!txt) { ov.style.display='none'; return; }
+  ov.textContent = txt; ov.style.color = window._pTextColor||'#fff'; ov.style.display='block';
+};
+window.setPhotoTextColor = (c) => {
+  window._pTextColor = c;
+  const ov = document.getElementById('pTextOverlay');
+  if (ov.style.display!=='none') ov.style.color = c;
+};
+window.togglePhotoFlip = () => {
+  window._pFlip = !window._pFlip;
+  const img = document.getElementById('photoEdPreview');
+  img.style.transform = `scaleX(${window._pFlip?-1:1}) rotate(${window._pRot||0}deg)`;
+  document.getElementById('pFlipBtn').style.background = window._pFlip ? 'var(--primary)' : 'rgba(255,255,255,.06)';
+};
+window.rotatePhoto = () => {
+  window._pRot = ((window._pRot||0) + 90) % 360;
+  const img = document.getElementById('photoEdPreview');
+  img.style.transform = `scaleX(${window._pFlip?-1:1}) rotate(${window._pRot}deg)`;
+  document.getElementById('pRotBtn').textContent = `↻ ${window._pRot}°`;
+};
+window.applyPhotoEdits = () => {
+  // Store the CSS filter so postPhoto can embed it
+  const img = document.getElementById('photoEdPreview');
+  window._photoEditorFilter    = img.style.filter;
+  window._photoEditorTransform = img.style.transform;
+  window._photoEditorText      = document.getElementById('pTextOverlay').textContent || '';
+  // Update the preview on the upload page
+  document.getElementById('photoPreview').style.filter    = window._photoEditorFilter;
+  document.getElementById('photoPreview').style.transform = window._photoEditorTransform;
+  closePhotoEditor();
+  toast('✅ Edits saved! Add a caption and post.');
+};
+
+// ─── New interaction buttons ───────────────────────────────────
+window.ttBookmark = async (postId, el) => {
+  if (!currentUser) { openLoginGate(); return; }
+  animBtn(el, 'anim-save');
+  const ref = doc(db,'users',currentUser.uid,'bookmarks',postId);
+  const ico = document.getElementById('bm-'+postId);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    await deleteDoc(ref);
+    if (ico) ico.textContent = '🔖';
+    toast('Removed from saved');
+  } else {
+    await setDoc(ref, { savedAt: serverTimestamp(), postId });
+    if (ico) ico.textContent = '🔒';
+    toast('✅ Saved! TalentClip watermark added.');
+    // ── Watermark: find the slide's video URL and create download with watermark ──
+    addWatermarkToSaved(postId);
+  }
+};
+
+async function addWatermarkToSaved(postId) {
+  try {
+    // Find the video or image src from the visible slide
+    const slide = document.querySelector(`.tt-slide[data-post-id="${postId}"]`);
+    if (!slide) return;
+    const vid = slide.querySelector('video');
+    const img = slide.querySelector('img');
+
+    if (img) {
+      // Photo watermark via canvas
+      const canvas = document.createElement('canvas');
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.onload = () => {
+        canvas.width = image.width; canvas.height = image.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0);
+        // TalentClip watermark
+        ctx.save();
+        ctx.globalAlpha = 0.7;
+        ctx.font = `bold ${Math.round(image.width * 0.045)}px Arial`;
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'right';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 6;
+        ctx.fillText('TalentClip', image.width - 16, image.height - 16);
+        ctx.restore();
+        // Auto-download
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/jpeg', 0.92);
+        a.download = `talentclip-${postId}.jpg`;
+        a.click();
+      };
+      image.src = img.src;
+    } else if (vid) {
+      // For video we show a toast — canvas video recording requires MediaRecorder
+      // which is not universally supported. We note the watermark is in the filename.
+      toast('💾 Video saved to your collection with TalentClip tag');
+    }
+  } catch(e) { console.log('Watermark error:', e); }
+}
+
+window.ttDuet = (postId, authorName) => {
+  if (!currentUser) { openLoginGate(); return; }
+  animBtn(event?.currentTarget, 'anim-duet');
+  toast(`🎭 Duet with ${authorName} — record your video side-by-side!`);
+  // Open camera to record duet
+  openVideoUploadWithCamera(true);
+};
+
+window.ttGift = (postId, authorName) => {
+  if (!currentUser) { openLoginGate(); return; }
+  animBtn(event?.currentTarget, 'anim-gift');
+  // Show gift bottom sheet
+  const existing = document.getElementById('giftSheet');
+  if (existing) existing.remove();
+  const sheet = document.createElement('div');
+  sheet.id = 'giftSheet';
+  sheet.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:200;background:#0e0e1f;border-radius:20px 20px 0 0;padding:20px;animation:slideUp .3s ease;';
+  sheet.innerHTML = `
+    <div style="text-align:center;font-size:15px;font-weight:800;margin-bottom:16px;">🎁 Send a Gift to ${authorName}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+      ${[['🌹','Rose','1'],['⭐','Star','5'],['💎','Diamond','20'],['🏆','Trophy','50'],
+         ['🚀','Rocket','100'],['👑','Crown','200'],['🦁','Lion','500'],['💰','Gold','1000']]
+        .map(([ico,name,pts])=>`<div onclick="sendGift('${postId}','${authorName}','${name}',${pts})" style="background:rgba(255,255,255,.06);border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,.08);">
+          <div style="font-size:26px;">${ico}</div>
+          <div style="font-size:11px;font-weight:700;">${name}</div>
+          <div style="font-size:10px;color:var(--primary);">${pts} pts</div>
+        </div>`).join('')}
+    </div>
+    <button onclick="document.getElementById('giftSheet').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;color:var(--muted);font-family:'Outfit',sans-serif;cursor:pointer;">Cancel</button>`;
+  document.body.appendChild(sheet);
+};
+
+window.sendGift = async (postId, authorName, giftName, pts) => {
+  if (!currentUser) return;
+  document.getElementById('giftSheet')?.remove();
+  toast(`🎁 Sent a ${giftName} to ${authorName}! (+${pts} pts)`);
+  try {
+    await addDoc(collection(db,'gifts'), {
+      fromUid: currentUser.uid, postId, authorName, giftName, pts,
+      sentAt: serverTimestamp()
+    });
+  } catch(e) { console.log('Gift record failed (offline)'); }
+};
+
+window.ttFollowFromFeed = async (uid, btn) => {
+  if (!currentUser) { openLoginGate(); return; }
+  if (!uid || uid === currentUser.uid) return;
+  const ico = document.getElementById('ff-'+uid);
+  const isNowFollowing = followingSet.has(uid);
+  if (isNowFollowing) {
+    followingSet.delete(uid);
+    if (ico) ico.textContent = '➕';
+    await deleteDoc(doc(db,'users',currentUser.uid,'following',uid));
+    toast('Unfollowed');
+  } else {
+    followingSet.add(uid);
+    if (ico) ico.textContent = '✅';
+    await setDoc(doc(db,'users',currentUser.uid,'following',uid),{followedAt:serverTimestamp()});
+    await setDoc(doc(db,'users',uid,'followers',currentUser.uid),{followedAt:serverTimestamp()});
+    toast('✅ Following!');
+  }
+};
+
+// Helper: burn CSS filter into image blob via Canvas
+async function applyFilterToImage(file, cssFilter, transform) {
+  return new Promise((resolve) => {
+    if (!cssFilter && !transform) { resolve(file); return; }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.filter = cssFilter || 'none';
+      // Apply transform (flip/rotate) via canvas transform
+      ctx.save();
+      ctx.translate(canvas.width/2, canvas.height/2);
+      if (transform && transform.includes('scaleX(-1)')) ctx.scale(-1,1);
+      if (transform && transform.includes('scaleY(-1)')) ctx.scale(1,-1);
+      const rotMatch = transform && transform.match(/rotate\((\d+)deg\)/);
+      if (rotMatch) ctx.rotate(parseInt(rotMatch[1]) * Math.PI/180);
+      ctx.drawImage(img, -canvas.width/2, -canvas.height/2);
+      ctx.restore();
+      canvas.toBlob(blob => resolve(new File([blob], file.name, {type:'image/jpeg'})), 'image/jpeg', 0.92);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 window.postPhoto=async()=>{
   if(!currentUser){openLoginGate();return;}
-  const file=document.getElementById('photoInput').files[0];
+  const file = window._chosenPhotoFile || document.getElementById('photoInput')?.files[0];
   const caption=document.getElementById('photoCaption').value.trim();
   const category=document.getElementById('photoCategory').value;
   if(!category){toast('⚠️ Select a category');return;}
   if(!file&&!caption){toast('Add a photo or caption');return;}
   const btn=document.getElementById('photoBtn');
-  btn.disabled=true; btn.textContent='Posting...';
+  btn.disabled=true; btn.textContent='Applying edits...';
   try {
     let mediaUrl='';
     if(file){
+      // Burn editor filter/transform into image before upload
+      const editedFile = await applyFilterToImage(
+        file,
+        window._photoEditorFilter || '',
+        window._photoEditorTransform || ''
+      );
       toast('Uploading photo...');
-      mediaUrl = await uploadToCloudinary(file, pct => { btn.textContent = `Uploading ${pct}%...`; });
+      mediaUrl = await uploadToCloudinary(editedFile, pct => { btn.textContent = `Uploading ${pct}%...`; });
     }
     const usnap=await getDoc(doc(db,'users',currentUser.uid));
     const ud=usnap.data()||{};
@@ -3616,22 +4245,131 @@ window.postPhoto=async()=>{
     await updateDoc(doc(db,'users',currentUser.uid),{postCount:increment(1)});
     await checkAndApplyBoost(docRef.id);
     toast('✅ Photo posted!');
+    window._chosenPhotoFile      = null;
+    window._photoEditorFilter    = '';
+    window._photoEditorTransform = '';
     openPage('home');
   } catch(e){ toast('Error: '+e.message); }
   btn.disabled=false; btn.textContent='POST PHOTO ✨';
 };
+
+// Burn CSS filter + trim into video using Canvas + MediaRecorder
+async function burnEditorToVideo(file, settings) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    const url = URL.createObjectURL(file);
+    video.src = url;
+
+    video.onloadedmetadata = () => {
+      const trimStart = parseFloat(settings.trimStart) || 0;
+      const trimEnd   = Math.min(parseFloat(settings.trimEnd) || video.duration, 60, video.duration);
+      const duration  = trimEnd - trimStart;
+
+      const canvas = document.createElement('canvas');
+      canvas.width  = video.videoWidth  || 720;
+      canvas.height = video.videoHeight || 1280;
+      const ctx = canvas.getContext('2d');
+
+      // Set CSS filter on canvas context
+      const cssFilter = settings.filter || '';
+
+      // MediaRecorder to capture canvas frames
+      let stream;
+      try {
+        stream = canvas.captureStream(30);
+      } catch(e) { URL.revokeObjectURL(url); reject(e); return; }
+
+      // Add audio track from original video
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = audioCtx.createMediaElementSource(video);
+      const dest = audioCtx.createMediaStreamDestination();
+      src.connect(dest); src.connect(audioCtx.destination);
+      dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9' : 'video/webm';
+      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
+      const chunks = [];
+
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        URL.revokeObjectURL(url);
+        audioCtx.close();
+        const blob = new Blob(chunks, { type: mimeType });
+        resolve(new File([blob], 'talentclip-edited.webm', { type: mimeType }));
+      };
+
+      video.onseeked = () => {
+        recorder.start(100);
+        let lastTime = -1;
+        const draw = () => {
+          if (video.currentTime >= trimEnd || video.ended) {
+            recorder.stop(); video.pause(); return;
+          }
+          if (video.currentTime !== lastTime) {
+            lastTime = video.currentTime;
+            ctx.save();
+            ctx.filter = cssFilter || 'none';
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Text overlay
+            if (settings.overlayText) {
+              ctx.filter = 'none';
+              ctx.font = `bold ${Math.round(canvas.height * 0.045)}px Arial`;
+              ctx.fillStyle = settings.overlayColor || '#fff';
+              ctx.textAlign = 'center';
+              ctx.shadowColor = '#000'; ctx.shadowBlur = 8;
+              ctx.fillText(settings.overlayText, canvas.width/2, canvas.height - 80);
+            }
+            ctx.restore();
+          }
+          requestAnimationFrame(draw);
+        };
+        video.play().then(draw).catch(reject);
+      };
+
+      video.currentTime = trimStart;
+    };
+    video.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Video load failed')); };
+  });
+}
 
 window.uploadVideo=async()=>{
   if(!currentUser){openLoginGate();return;}
   const title=document.getElementById('videoTitle').value.trim();
   const desc=document.getElementById('videoDesc').value.trim();
   const category=document.getElementById('categorySelect').value;
-  const file=document.getElementById('videoInput').files[0];
+  const file = window._chosenVideoFile || document.getElementById('videoInput')?.files[0];
   const btn=document.getElementById('uploadBtn');
   const prog=document.getElementById('upProg');
   const bar=document.getElementById('upBar');
-  const actualFile = window._trimmedVideoBlob ? new File([window._trimmedVideoBlob],'video.webm',{type:'video/webm'}) : file;
   if(!file){toast('Select a video');return;}
+  btn.disabled=true; btn.textContent='Applying edits...';
+
+  // Only re-encode if the user actually applied a filter/transform.
+  // Trim-only or no edits = upload original file to preserve quality.
+  let actualFile = window._trimmedVideoBlob
+    ? new File([window._trimmedVideoBlob],'trimmed.webm',{type:'video/webm'})
+    : file;
+
+  const settings = window._editorSettings || {};
+  const hasVisualEdits = settings.filterName && settings.filterName !== 'none'
+    || (parseInt(settings.brightness)||100) !== 100
+    || (parseInt(settings.contrast)||100) !== 100
+    || (parseInt(settings.saturate)||100) !== 100
+    || settings.overlayText;
+
+  if (hasVisualEdits) {
+    try {
+      btn.textContent = '🎨 Baking edits...';
+      actualFile = await burnEditorToVideo(file, settings);
+      btn.textContent = 'Uploading...';
+    } catch(e) {
+      console.warn('Editor burn failed, uploading original:', e);
+      // fall through — actualFile is already the original
+    }
+  }
   if(!title){toast('Enter a title');return;}
   if(!category){toast('Select a category');return;}
   btn.disabled=true; btn.textContent='Uploading...';
@@ -3655,6 +4393,9 @@ window.uploadVideo=async()=>{
     await updateDoc(doc(db,'users',currentUser.uid),{postCount:increment(1)});
     await checkAndApplyBoost(vDocRef.id);
     toast('✅ Video posted!');
+    window._chosenVideoFile = null;
+    window._editorSettings  = {};
+    window._videoEdited     = false;
     openPage('home');
   } catch(e){ toast('Error: '+e.message); }
   btn.disabled=false; btn.textContent='POST VIDEO 🚀';
