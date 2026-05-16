@@ -572,11 +572,12 @@ body{
 
 <!-- VIDEO UPLOAD -->
 <div id="videoUploadPage" class="page">
-  <div class="hdr"><div class="hdr-back" onclick="openPage('upload')">←</div><div class="hdr-title">Upload Video</div><div style="width:30px;"></div></div>
+  <div class="hdr"><div class="hdr-back" onclick="window._chosenVideoFile ? openPage('videoEditorPage') : openPage('upload')">←</div><div class="hdr-title">Post Video</div><div style="width:30px;"></div></div>
   <div class="form-wrap">
-    <!-- Hidden file input — triggered by gallery/camera buttons above -->
-    <input type="file" id="videoInput" accept="video/*" hidden onchange="onVideoChosen()">
-    <div id="videoFileName" style="text-align:center;color:var(--muted);padding:20px 0 10px;font-size:13px;">Choosing video...</div>
+    <!-- Status banner — updated by editor -->
+    <div id="videoFileName" style="text-align:center;color:var(--muted);padding:10px 0;font-size:13px;">Choosing video...</div>
+    <!-- Mini preview of chosen video -->
+    <video id="uploadPreviewVid" style="display:none;width:100%;max-height:200px;object-fit:cover;border-radius:14px;background:#000;" muted playsinline loop></video>
     <input class="finp" type="text" id="videoTitle" placeholder="Title...">
     <textarea class="finp" id="videoDesc" placeholder="Description..." style="min-height:75px;"></textarea>
     <select class="fsel" id="categorySelect">
@@ -608,7 +609,7 @@ body{
 
   <!-- Video preview -->
   <div style="position:relative;width:100%;background:#000;display:flex;align-items:center;justify-content:center;min-height:300px;">
-    <video id="editorVideo" style="width:100%;max-height:340px;object-fit:contain;display:block;" playsinline muted loop></video>
+    <video id="editorVideo" style="width:100%;max-height:340px;object-fit:contain;display:block;" playsinline loop></video>
     <!-- Text overlay preview -->
     <div id="editorTextOverlay" style="position:absolute;bottom:50px;left:0;right:0;text-align:center;font-size:22px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8);pointer-events:none;padding:0 16px;display:none;"></div>
   </div>
@@ -1228,6 +1229,11 @@ body{
   <div class="nav-item on" id="nav-home" onclick="openPage('home')"><span class="ni">🏠</span>Home</div>
   <div class="nav-item" id="nav-tiktokPage" onclick="openPage('tiktokPage')"><span class="ni">▶️</span>Videos</div>
   <div class="nav-item" id="nav-upload" onclick="openPage('upload')"><span class="ni">➕</span>Upload</div>
+  <div class="nav-item" id="nav-notif" onclick="openNotifications()" style="position:relative;">
+    <span class="ni">🔔</span>
+    <span id="notifBell" style="position:absolute;top:4px;right:6px;background:#ff3b5c;color:#fff;font-size:9px;font-weight:800;border-radius:10px;padding:1px 5px;min-width:16px;text-align:center;display:none;line-height:14px;"></span>
+    Notifs
+  </div>
   <div class="nav-item" id="nav-profile" onclick="openPage('profile')"><span class="ni">👤</span>Profile</div>
 </div>
 
@@ -1845,7 +1851,8 @@ async function loadTikTokFeedForUser(uid) {
       const avSrc2 = p.authorPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.authorName||'U')}&background=0e0e1f&color=00c6ff`;
       const isFollowing2 = followingSet.has(p.uid);
       slide.innerHTML = `
-        <video src="${p.mediaUrl}" loop playsinline preload="metadata"></video>
+        <video src="${p.mediaUrl}" loop playsinline preload="metadata" muted></video>
+        <div class="sound-toggle" onclick="toggleFeedSound(this)" title="Tap to unmute">🔇</div>
         <div class="tt-overlay"></div>
         <div class="tt-info">
           <div class="tt-author-row">
@@ -2052,7 +2059,7 @@ function openVideoFeedPage(posts, title, backPage) {
     const avSrc = p.authorPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.authorName||'U')}&background=0e0e1f&color=00c6ff`;
     const catBadge = p.category ? `<div style="position:absolute;top:70px;left:14px;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;color:#fff;">🎬 ${p.category}</div>` : '';
     slide.innerHTML = `
-      <video src="${p.mediaUrl}" loop playsinline preload="metadata"></video>
+      <video src="${p.mediaUrl}" loop playsinline preload="metadata" muted></video>
       <div class="tt-overlay"></div>
       ${catBadge}
       <div class="tt-info">
@@ -2210,7 +2217,7 @@ function loadCategoryFeed(cat) {
       } else if(post.type==='video' && post.mediaUrl){
         // Video slide — same as explore feed
         slide.innerHTML = `
-          <video src="${post.mediaUrl}" loop playsinline preload="metadata"></video>
+          <video src="${post.mediaUrl}" loop playsinline preload="metadata" muted></video>
           <div class="tt-overlay"></div>
           ${catBadge}
           <div class="tt-info">
@@ -2374,7 +2381,8 @@ async function loadTikTokFeed(cat) {
 
       const avSrc = p.authorPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.authorName||'U')}&background=0e0e1f&color=00c6ff`;
       slide.innerHTML = `
-        <video src="${p.mediaUrl}" loop playsinline preload="metadata"></video>
+        <video src="${p.mediaUrl}" loop playsinline preload="metadata" muted></video>
+        <div class="sound-toggle" onclick="toggleFeedSound(this)" title="Tap to unmute">🔇</div>
         <div class="tt-overlay"></div>
         ${isBoosted ? '<div class="boost-badge">🚀 BOOSTED</div>' : ''}
         <div class="tt-info">
@@ -2425,7 +2433,11 @@ async function loadTikTokFeed(cat) {
         const v = e.target.querySelector('video');
 
         if (e.isIntersecting) {
-          if (v) v.play().catch(()=>{});
+          if (v) {
+            v.muted = _feedMuted;
+            v.play().catch(()=>{});
+            applyMuteToSlide(e.target);
+          }
 
           const postId = e.target.dataset.postId;
           const authorUid = e.target.dataset.authorUid;
@@ -3602,6 +3614,16 @@ window.doTTFollow = async (uid, btn) => {
       await setDoc(doc(db,'users',currentUser.uid,'following',uid),{uid,at:serverTimestamp()});
       await updateDoc(doc(db,'users',currentUser.uid),{following:increment(1)});
       await updateDoc(doc(db,'users',uid),{followers:increment(1)});
+      // Send follow notification
+      sendNotification(uid, {
+        type: 'follow',
+        fromUid: currentUser.uid,
+        fromName: currentUser.displayName || 'Someone',
+        fromPhoto: currentUser.photoURL || '',
+        title: '🔥 New Follower!',
+        body: `${currentUser.displayName || 'Someone'} just followed you on TalentClip!`,
+        createdAt: serverTimestamp()
+      });
     } catch(e){ console.log('Follow error:',e); }
   }
 };
@@ -3681,7 +3703,7 @@ window.onVideoChosen = (inputEl) => {
   window._chosenVideoFile = f;
 
   const mb = f.size / (1024 * 1024);
-  if (mb > 150) { toast('❌ Video too large! Max 150MB'); return; }
+  if (mb > 50)  { toast('❌ Video too large! Max 50MB. Trim it in the editor.'); return; }
 
   const url = URL.createObjectURL(f);
   const tmp = document.createElement('video');
@@ -3715,6 +3737,8 @@ window.openVideoEditor = () => {
   if(edVid._objectURL) URL.revokeObjectURL(edVid._objectURL);
   edVid._objectURL = URL.createObjectURL(f);
   edVid.src = edVid._objectURL;
+  edVid.muted = false;  // Creator must hear their own video while editing
+  edVid.volume = 1;
   edVid.load();
 
   // Reset editor state
@@ -3844,13 +3868,42 @@ window.rotateEditor = () => {
 };
 
 window.applyEditorAndReturn = () => {
-  // Save the editor settings so uploadVideo can embed CSS filter in the description meta
   const edVid = document.getElementById('editorVideo');
-  edVid.pause();
-  // Store final settings for upload (filter, text overlay, trim)
+  if (edVid) edVid.pause();
   window._videoEdited = true;
-  toast('✅ Edits saved! Fill in details and post.');
+
+  // Switch to the upload page FIRST
   openPage('videoUploadPage');
+
+  // Scroll the page div itself to top
+  const pg = document.getElementById('videoUploadPage');
+  if (pg) pg.scrollTop = 0;
+
+  // Show mini video preview
+  const f = window._chosenVideoFile;
+  const prev = document.getElementById('uploadPreviewVid');
+  if (prev && f) {
+    if (prev._url) URL.revokeObjectURL(prev._url);
+    prev._url = URL.createObjectURL(f);
+    prev.src = prev._url;
+    prev.style.display = 'block';
+    prev.play().catch(()=>{});
+  }
+
+  // Update status banner
+  const label = document.getElementById('videoFileName');
+  if (label) {
+    const dur = window._editorVideoDuration || '?';
+    const mb = f ? (f.size/1024/1024).toFixed(1) : '?';
+    label.innerHTML = `
+      <div style="background:rgba(0,198,255,.1);border:1px solid rgba(0,198,255,.3);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <span style="font-size:28px;">🎬</span>
+        <div style="text-align:left;">
+          <div style="font-weight:800;color:#00c6ff;font-size:14px;">Video edited & ready!</div>
+          <div style="color:rgba(255,255,255,.6);font-size:12px;margin-top:2px;">${dur}s · ${mb}MB · Add a title below & post 🚀</div>
+        </div>
+      </div>`;
+  }
 };
 
 async function trimVideoTo60(file){
@@ -4045,16 +4098,41 @@ window.rotatePhoto = () => {
   document.getElementById('pRotBtn').textContent = `↻ ${window._pRot}°`;
 };
 window.applyPhotoEdits = () => {
-  // Store the CSS filter so postPhoto can embed it
   const img = document.getElementById('photoEdPreview');
-  window._photoEditorFilter    = img.style.filter;
-  window._photoEditorTransform = img.style.transform;
-  window._photoEditorText      = document.getElementById('pTextOverlay').textContent || '';
-  // Update the preview on the upload page
-  document.getElementById('photoPreview').style.filter    = window._photoEditorFilter;
-  document.getElementById('photoPreview').style.transform = window._photoEditorTransform;
-  closePhotoEditor();
-  toast('✅ Edits saved! Add a caption and post.');
+  window._photoEditorFilter    = img?.style.filter || '';
+  window._photoEditorTransform = img?.style.transform || '';
+  window._photoEditorText      = document.getElementById('pTextOverlay')?.textContent || '';
+
+  // Burn edits into the preview image on the upload page
+  const prev = document.getElementById('photoPreview');
+  if (prev && img) {
+    prev.src = img.src;
+    prev.style.filter    = window._photoEditorFilter;
+    prev.style.transform = window._photoEditorTransform;
+    prev.style.display   = 'block';
+  }
+
+  // Update status label
+  const label = document.getElementById('photoLabel');
+  if (label) {
+    label.innerHTML = `
+      <div style="background:rgba(0,198,255,.1);border:1px solid rgba(0,198,255,.3);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <span style="font-size:28px;">📸</span>
+        <div style="text-align:left;">
+          <div style="font-weight:800;color:#00c6ff;font-size:14px;">Photo edited & ready!</div>
+          <div style="color:rgba(255,255,255,.6);font-size:12px;margin-top:2px;">Add a caption below & post ✨</div>
+        </div>
+      </div>`;
+  }
+
+  // Close editor modal and navigate to post form
+  const modal = document.getElementById('photoEditorModal');
+  if (modal) modal.style.display = 'none';
+
+  openPage('photoUploadPage');
+  // Scroll page to top so form is visible
+  const pg = document.getElementById('photoUploadPage');
+  if (pg) pg.scrollTop = 0;
 };
 
 // ─── New interaction buttons ───────────────────────────────────
@@ -4182,29 +4260,40 @@ window.ttFollowFromFeed = async (uid, btn) => {
   }
 };
 
-// Helper: burn CSS filter into image blob via Canvas
-async function applyFilterToImage(file, cssFilter, transform) {
+// Compress + apply edits — always compress to save storage
+// Max 1280px wide, JPEG 82% quality → typically 150-400KB
+async function compressAndEditImage(file, cssFilter, transform) {
   return new Promise((resolve) => {
-    if (!cssFilter && !transform) { resolve(file); return; }
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
+      // Scale down to max 1280px on longest side
+      const MAX = 1280;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      // If rotated 90/270, swap dimensions
+      const rotMatch = transform && transform.match(/rotate\((\d+)deg\)/);
+      const rot = rotMatch ? parseInt(rotMatch[1]) : 0;
+      canvas.width  = (rot === 90 || rot === 270) ? h : w;
+      canvas.height = (rot === 90 || rot === 270) ? w : h;
       const ctx = canvas.getContext('2d');
-      ctx.filter = cssFilter || 'none';
-      // Apply transform (flip/rotate) via canvas transform
       ctx.save();
       ctx.translate(canvas.width/2, canvas.height/2);
       if (transform && transform.includes('scaleX(-1)')) ctx.scale(-1,1);
-      if (transform && transform.includes('scaleY(-1)')) ctx.scale(1,-1);
-      const rotMatch = transform && transform.match(/rotate\((\d+)deg\)/);
-      if (rotMatch) ctx.rotate(parseInt(rotMatch[1]) * Math.PI/180);
-      ctx.drawImage(img, -canvas.width/2, -canvas.height/2);
+      if (rot) ctx.rotate(rot * Math.PI/180);
+      ctx.filter = cssFilter || 'none';
+      ctx.drawImage(img, -w/2, -h/2, w, h);
       ctx.restore();
-      canvas.toBlob(blob => resolve(new File([blob], file.name, {type:'image/jpeg'})), 'image/jpeg', 0.92);
+      // 82% JPEG quality — good balance of quality vs size
+      canvas.toBlob(blob => {
+        if (!blob) { resolve(file); return; }
+        resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'}));
+      }, 'image/jpeg', 0.82);
     };
     img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
     img.src = url;
@@ -4223,12 +4312,15 @@ window.postPhoto=async()=>{
   try {
     let mediaUrl='';
     if(file){
-      // Burn editor filter/transform into image before upload
-      const editedFile = await applyFilterToImage(
+      // Compress + burn editor filter into image before upload
+      toast('Compressing photo...');
+      const editedFile = await compressAndEditImage(
         file,
         window._photoEditorFilter || '',
         window._photoEditorTransform || ''
       );
+      const savedKB = Math.round((file.size - editedFile.size) / 1024);
+      console.log(`Photo compressed: ${(file.size/1024).toFixed(0)}KB → ${(editedFile.size/1024).toFixed(0)}KB (saved ${savedKB}KB)`);
       toast('Uploading photo...');
       mediaUrl = await uploadToCloudinary(editedFile, pct => { btn.textContent = `Uploading ${pct}%...`; });
     }
@@ -4257,73 +4349,88 @@ window.postPhoto=async()=>{
 async function burnEditorToVideo(file, settings) {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
-    video.muted = true;
+    // ⚠️ CRITICAL: do NOT mute — we need audio for the MediaRecorder
+    video.muted = false;
+    video.volume = 1;
     video.playsInline = true;
+    video.crossOrigin = 'anonymous';
     const url = URL.createObjectURL(file);
     video.src = url;
 
     video.onloadedmetadata = () => {
       const trimStart = parseFloat(settings.trimStart) || 0;
       const trimEnd   = Math.min(parseFloat(settings.trimEnd) || video.duration, 60, video.duration);
-      const duration  = trimEnd - trimStart;
 
       const canvas = document.createElement('canvas');
       canvas.width  = video.videoWidth  || 720;
       canvas.height = video.videoHeight || 1280;
       const ctx = canvas.getContext('2d');
-
-      // Set CSS filter on canvas context
       const cssFilter = settings.filter || '';
 
-      // MediaRecorder to capture canvas frames
-      let stream;
+      // Video stream from canvas
+      const videoStream = canvas.captureStream(30);
+
+      // Audio stream — capture directly from the video element
+      // This preserves the original audio without re-encoding through Web Audio
+      let finalStream;
       try {
-        stream = canvas.captureStream(30);
-      } catch(e) { URL.revokeObjectURL(url); reject(e); return; }
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = audioCtx.createMediaElementSource(video);
+        const dest = audioCtx.createMediaStreamDestination();
+        // Connect to destination so audio plays (needed for capture to work)
+        src.connect(dest);
+        src.connect(audioCtx.destination);
+        // Merge canvas video + audio destination tracks
+        const combined = new MediaStream([
+          ...videoStream.getVideoTracks(),
+          ...dest.stream.getAudioTracks()
+        ]);
+        finalStream = combined;
+        // Clean up audio context when done
+        video._audioCtx = audioCtx;
+      } catch(e) {
+        // Fallback: video-only if audio capture fails
+        console.warn('Audio capture failed, using video-only:', e);
+        finalStream = videoStream;
+      }
 
-      // Add audio track from original video
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const src = audioCtx.createMediaElementSource(video);
-      const dest = audioCtx.createMediaStreamDestination();
-      src.connect(dest); src.connect(audioCtx.destination);
-      dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+      // Pick best supported codec
+      const mimeType = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']
+        .find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
 
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-        ? 'video/webm;codecs=vp9' : 'video/webm';
-      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
+      const recorder = new MediaRecorder(finalStream, {
+        mimeType,
+        videoBitsPerSecond: 8000000,  // 8Mbps video
+        audioBitsPerSecond: 128000    // 128kbps audio
+      });
       const chunks = [];
 
       recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
       recorder.onstop = () => {
         URL.revokeObjectURL(url);
-        audioCtx.close();
+        video._audioCtx?.close();
         const blob = new Blob(chunks, { type: mimeType });
         resolve(new File([blob], 'talentclip-edited.webm', { type: mimeType }));
       };
 
       video.onseeked = () => {
         recorder.start(100);
-        let lastTime = -1;
         const draw = () => {
           if (video.currentTime >= trimEnd || video.ended) {
             recorder.stop(); video.pause(); return;
           }
-          if (video.currentTime !== lastTime) {
-            lastTime = video.currentTime;
-            ctx.save();
-            ctx.filter = cssFilter || 'none';
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            // Text overlay
-            if (settings.overlayText) {
-              ctx.filter = 'none';
-              ctx.font = `bold ${Math.round(canvas.height * 0.045)}px Arial`;
-              ctx.fillStyle = settings.overlayColor || '#fff';
-              ctx.textAlign = 'center';
-              ctx.shadowColor = '#000'; ctx.shadowBlur = 8;
-              ctx.fillText(settings.overlayText, canvas.width/2, canvas.height - 80);
-            }
-            ctx.restore();
+          ctx.save();
+          ctx.filter = cssFilter || 'none';
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          if (settings.overlayText) {
+            ctx.filter = 'none';
+            ctx.font = `bold ${Math.round(canvas.height * 0.045)}px Arial`;
+            ctx.fillStyle = settings.overlayColor || '#fff';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#000'; ctx.shadowBlur = 8;
+            ctx.fillText(settings.overlayText, canvas.width/2, canvas.height - 80);
           }
+          ctx.restore();
           requestAnimationFrame(draw);
         };
         video.play().then(draw).catch(reject);
@@ -4334,6 +4441,183 @@ async function burnEditorToVideo(file, settings) {
     video.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Video load failed')); };
   });
 }
+
+// ─── Push Notifications ───────────────────────────────────────
+function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') return;
+  if (Notification.permission === 'denied') return;
+  // Small delay so it doesn't fire right on login
+  setTimeout(() => {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        console.log('✅ Notifications enabled');
+        // Save permission to user doc
+        if (currentUser) {
+          updateDoc(doc(db,'users',currentUser.uid), {
+            notifEnabled: true, notifUpdatedAt: serverTimestamp()
+          }).catch(()=>{});
+        }
+      }
+    });
+  }, 3000);
+}
+
+// Save a notification to Firestore (toUid's notifications collection)
+async function sendNotification(toUid, data) {
+  if (!toUid || !currentUser) return;
+  try {
+    await addDoc(collection(db,'users',toUid,'notifications'), {
+      ...data,
+      read: false,
+      createdAt: serverTimestamp()
+    });
+    // Also show browser notification if we have permission
+    if (Notification.permission === 'granted' && document.hidden) {
+      new Notification(data.title, {
+        body: data.body,
+        icon: data.fromPhoto || 'icon-192.png',
+        badge: 'icon-96.png',
+        tag: data.type + '-' + toUid,
+        renotify: true
+      });
+    }
+  } catch(e) { console.log('Notification send failed:', e); }
+}
+
+// Notify all followers when a new video is posted
+async function notifyFollowersNewVideo(postId, videoTitle, authorName) {
+  if (!currentUser) return;
+  try {
+    // Get all followers of the current user
+    const followersSnap = await getDocs(
+      query(collection(db,'users',currentUser.uid,'followers'), limit(100))
+    );
+    if (followersSnap.empty) return;
+
+    const msgs = [
+      `🎬 ${authorName} just dropped a new video — don't miss it!`,
+      `🔥 ${authorName} is back with something new. Go check it out!`,
+      `⚡ Fresh from ${authorName} — a brand new video just hit TalentClip!`,
+      `🎉 ${authorName} just posted! Your feed just got better.`,
+      `👀 ${authorName} uploaded something new — are you ready?`
+    ];
+    const body = msgs[Math.floor(Math.random() * msgs.length)];
+
+    // Write a notification for each follower (batch up to 100)
+    const batch = [];
+    followersSnap.docs.forEach(d => {
+      batch.push(addDoc(collection(db,'users',d.id,'notifications'), {
+        type: 'new_video',
+        fromUid: currentUser.uid,
+        fromName: authorName,
+        fromPhoto: currentUser.photoURL || '',
+        postId,
+        videoTitle: videoTitle || 'New Video',
+        title: `🎬 ${authorName} posted!`,
+        body,
+        read: false,
+        createdAt: serverTimestamp()
+      }));
+    });
+    await Promise.all(batch);
+    console.log(`✅ Notified ${batch.length} followers`);
+  } catch(e) { console.log('Follower notification failed:', e); }
+}
+
+// Load & display notification bell count
+async function loadNotifCount() {
+  if (!currentUser) return;
+  try {
+    const snap = await getDocs(
+      query(collection(db,'users',currentUser.uid,'notifications'), limit(99))
+    );
+    const count = snap.docs.filter(d => d.data().read === false).length;
+    const bell = document.getElementById('notifBell');
+    if (bell) {
+      if (count > 0) {
+        bell.textContent = count > 9 ? '9+' : count;
+        bell.style.display = 'block';
+      } else {
+        bell.style.display = 'none';
+      }
+    }
+  } catch(e) {}
+}
+
+// Open notifications panel
+window.openNotifications = async () => {
+  if (!currentUser) { openLoginGate(); return; }
+  let panel = document.getElementById('notifPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'notifPanel';
+    panel.style.cssText = 'position:fixed;inset:0;z-index:500;background:var(--bg);overflow-y:auto;';
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;background:var(--bg);z-index:1;">
+        <button onclick="document.getElementById('notifPanel').remove()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;">←</button>
+        <span style="font-size:18px;font-weight:800;">Notifications</span>
+      </div>
+      <div id="notifList" style="padding:12px;">
+        <div style="text-align:center;padding:40px;color:var(--muted);">Loading...</div>
+      </div>`;
+    document.body.appendChild(panel);
+  } else {
+    panel.style.display = 'block';
+  }
+
+  try {
+    const snap = await getDocs(
+      query(collection(db,'users',currentUser.uid,'notifications'), limit(50))
+    );
+    // Sort newest first in memory — no index needed
+    const sortedDocs = [...snap.docs].sort((a,b) => {
+      const at = a.data().createdAt?.seconds || 0;
+      const bt = b.data().createdAt?.seconds || 0;
+      return bt - at;
+    });
+    const list = document.getElementById('notifList');
+    if (snap.empty) {
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px;">No notifications yet 🔔<br><span style="font-size:12px;">Follow creators and interact to get notified!</span></div>';
+      return;
+    }
+    list.innerHTML = '';
+    sortedDocs.forEach(d => {
+      const n = d.data();
+      const el = document.createElement('div');
+      el.style.cssText = `display:flex;gap:12px;align-items:flex-start;padding:14px 8px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;background:${n.read?'transparent':'rgba(0,198,255,.05)'};border-radius:12px;margin-bottom:4px;`;
+      const ico = {like:'❤️',follow:'👤',comment:'💬',new_video:'🎬',gift:'🎁'}[n.type]||'🔔';
+      el.innerHTML = `
+        <div style="width:46px;height:46px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden;">
+          ${n.fromPhoto ? `<img src="${n.fromPhoto}" style="width:100%;height:100%;object-fit:cover;">` : ico}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:3px;">${n.title||'Notification'}</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;">${n.body||''}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">${timeAgo(n.createdAt)}</div>
+        </div>
+        ${!n.read ? '<div style="width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:4px;"></div>' : ''}`;
+      // Mark as read on tap
+      el.onclick = async () => {
+        el.style.background = 'transparent';
+        el.querySelector('[style*="border-radius:50%;background:var(--primary)"]')?.remove();
+        await updateDoc(doc(db,'users',currentUser.uid,'notifications',d.id),{read:true}).catch(()=>{});
+        if (n.postId) {
+          // Open that post
+          panel.remove();
+        }
+      };
+      list.appendChild(el);
+    });
+    // Mark all as read
+    sortedDocs.forEach(d => {
+      updateDoc(doc(db,'users',currentUser.uid,'notifications',d.id),{read:true}).catch(()=>{});
+    });
+    loadNotifCount();
+  } catch(e) {
+    document.getElementById('notifList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">Could not load notifications</div>';
+  }
+};
 
 window.uploadVideo=async()=>{
   if(!currentUser){openLoginGate();return;}
@@ -4392,6 +4676,8 @@ window.uploadVideo=async()=>{
     });
     await updateDoc(doc(db,'users',currentUser.uid),{postCount:increment(1)});
     await checkAndApplyBoost(vDocRef.id);
+    // Notify all followers that a new video was posted
+    notifyFollowersNewVideo(vDocRef.id, title, ud.displayName || 'A creator');
     toast('✅ Video posted!');
     window._chosenVideoFile = null;
     window._editorSettings  = {};
