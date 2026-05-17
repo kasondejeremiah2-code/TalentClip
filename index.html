@@ -209,6 +209,23 @@ body{
 .tt-btn .lbl{font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);}
 .tt-empty-slide{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:12px;font-size:14px;}
 
+/* ── Pause overlay ── */
+.pause-overlay{position:absolute;inset:0;z-index:18;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;}
+.pause-overlay.visible{animation:pausePop .7s ease forwards;}
+@keyframes pausePop{
+  0%  {opacity:0;transform:scale(.6);}
+  15% {opacity:1;transform:scale(1.15);}
+  30% {transform:scale(1);}
+  65% {opacity:1;}
+  100%{opacity:0;transform:scale(1);}
+}
+.pause-ico{width:80px;height:80px;border-radius:50%;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:36px;}
+
+/* ── Buffering spinner ── */
+.vid-spinner{position:absolute;inset:0;z-index:17;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.3);}
+.vid-spinner svg{width:58px;height:58px;animation:spinRing 1s linear infinite;}
+@keyframes spinRing{to{transform:rotate(360deg);}}
+
 /* Double-tap fullscreen overlay */
 #dblFullscreen{position:fixed;inset:0;background:#000;z-index:7000;display:none;align-items:center;justify-content:center;flex-direction:column;}
 #dblFullscreen.open{display:flex;}
@@ -1853,6 +1870,8 @@ async function loadTikTokFeedForUser(uid) {
       slide.innerHTML = `
         <video src="${p.mediaUrl}" loop playsinline preload="metadata" muted></video>
         <div class="sound-toggle" onclick="toggleFeedSound(this)" title="Tap to unmute">🔇</div>
+        <div class="vid-spinner"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="4" stroke-dasharray="80 40" stroke-linecap="round"/></svg></div>
+        <div class="pause-overlay"><div class="pause-ico">⏸</div></div>
         <div class="tt-overlay"></div>
         <div class="tt-info">
           <div class="tt-author-row">
@@ -1890,7 +1909,7 @@ async function loadTikTokFeedForUser(uid) {
           </div>
         </div>`;
       const vid1 = slide.querySelector('video');
-      attachDoubleTap(vid1, null, () => { vid1.paused ? vid1.play() : vid1.pause(); });
+      attachDoubleTap(vid1, null, () => { if(vid1.paused){vid1.play();}else{vid1.pause();showPauseOverlay(vid1.closest('.tt-slide'));} });
       wrap.appendChild(slide);
     });
     const io = new IntersectionObserver(entries => {
@@ -2101,7 +2120,7 @@ function openVideoFeedPage(posts, title, backPage) {
         </div>
       </div>`;
     const vid = slide.querySelector('video');
-    attachDoubleTap(vid, null, () => { vid.paused ? vid.play() : vid.pause(); });
+    attachDoubleTap(vid, null, () => { if(vid.paused){vid.play();}else{vid.pause();showPauseOverlay(vid.closest('.tt-slide'));} });
     wrap.appendChild(slide);
   });
 
@@ -2255,7 +2274,7 @@ function loadCategoryFeed(cat) {
             </div>
           </div>`;
         const vid = slide.querySelector('video');
-        attachDoubleTap(vid, null, ()=>{ vid.paused?vid.play():vid.pause(); });
+        attachDoubleTap(vid, null, ()=>{ if(vid.paused){vid.play();}else{vid.pause();showPauseOverlay(vid.closest('.tt-slide'));} });
       } else { return; }
 
       snapWrap.appendChild(slide);
@@ -2383,6 +2402,8 @@ async function loadTikTokFeed(cat) {
       slide.innerHTML = `
         <video src="${p.mediaUrl}" loop playsinline preload="metadata" muted></video>
         <div class="sound-toggle" onclick="toggleFeedSound(this)" title="Tap to unmute">🔇</div>
+        <div class="vid-spinner"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="4" stroke-dasharray="80 40" stroke-linecap="round"/></svg></div>
+        <div class="pause-overlay"><div class="pause-ico">⏸</div></div>
         <div class="tt-overlay"></div>
         ${isBoosted ? '<div class="boost-badge">🚀 BOOSTED</div>' : ''}
         <div class="tt-info">
@@ -2421,7 +2442,7 @@ async function loadTikTokFeed(cat) {
           </div>
         </div>`;
       const vid2 = slide.querySelector('video');
-      attachDoubleTap(vid2, null, () => { vid2.paused ? vid2.play() : vid2.pause(); });
+      attachDoubleTap(vid2, null, () => { if(vid2.paused){vid2.play();}else{vid2.pause();showPauseOverlay(vid2.closest('.tt-slide'));} });
       wrap.appendChild(slide);
       videoCount++;
     }
@@ -2437,6 +2458,7 @@ async function loadTikTokFeed(cat) {
             v.muted = _feedMuted;
             v.play().catch(()=>{});
             applyMuteToSlide(e.target);
+            attachVideoEvents(e.target);
           }
 
           const postId = e.target.dataset.postId;
@@ -3305,6 +3327,60 @@ onAuthStateChanged(auth, u => { window._currentUid = u?.uid || ''; });
 // ══════════════════════════════════════════════════════════════
 // COMMENTS SYSTEM — with replies, likes, report
 // ══════════════════════════════════════════════════════════════
+// ─── Feed sound + pause overlay + buffering ───────────────────
+let _feedMuted = true;
+
+window.toggleFeedSound = (btn) => {
+  _feedMuted = !_feedMuted;
+  document.querySelectorAll('.tt-slide video').forEach(v => { v.muted = _feedMuted; });
+  document.querySelectorAll('.sound-toggle').forEach(b => {
+    b.textContent = _feedMuted ? '🔇' : '🔊';
+    b.style.background = _feedMuted ? 'rgba(0,0,0,.5)' : 'rgba(0,198,255,.35)';
+  });
+};
+
+function applyMuteToSlide(slide) {
+  const v = slide.querySelector('video');
+  if (v) v.muted = _feedMuted;
+  const btn = slide.querySelector('.sound-toggle');
+  if (btn) {
+    btn.textContent = _feedMuted ? '🔇' : '🔊';
+    btn.style.background = _feedMuted ? 'rgba(0,0,0,.5)' : 'rgba(0,198,255,.35)';
+  }
+}
+
+function showPauseOverlay(slide) {
+  if (!slide) return;
+  // Ensure overlay exists — add it if slide was built without it
+  let ov = slide.querySelector('.pause-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'pause-overlay';
+    ov.innerHTML = '<div class="pause-ico">⏸</div>';
+    slide.appendChild(ov);
+  }
+  ov.classList.remove('visible');
+  void ov.offsetWidth; // force reflow so animation restarts
+  ov.classList.add('visible');
+  // Remove class after animation so it's ready for next tap
+  setTimeout(() => ov.classList.remove('visible'), 750);
+}
+
+function attachVideoEvents(slide) {
+  const v = slide.querySelector('video');
+  if (!v || v._eventsAttached) return;
+  v._eventsAttached = true;
+  const getSpinner = () => slide.querySelector('.vid-spinner');
+  v.addEventListener('waiting',  () => { const s=getSpinner(); if(s) s.style.display='flex'; });
+  v.addEventListener('stalled',  () => { const s=getSpinner(); if(s) s.style.display='flex'; });
+  v.addEventListener('canplay',  () => { const s=getSpinner(); if(s) s.style.display='none'; });
+  v.addEventListener('playing',  () => { const s=getSpinner(); if(s) s.style.display='none'; });
+  v.addEventListener('error',    () => {
+    const s=getSpinner(); if(s) s.style.display='flex';
+    setTimeout(() => { const t=v.currentTime; v.load(); v.currentTime=t; v.play().catch(()=>{}); }, 2000);
+  });
+}
+
 let _commentsPostId = null;
 let _commentsUnsub = null;
 let _replyTo = null; // {commentId, authorName}
@@ -3879,14 +3955,19 @@ window.applyEditorAndReturn = () => {
   const pg = document.getElementById('videoUploadPage');
   if (pg) pg.scrollTop = 0;
 
-  // Show mini video preview
+  // Show mini video preview WITH applied filter/transform
   const f = window._chosenVideoFile;
   const prev = document.getElementById('uploadPreviewVid');
+  const settings = window._editorSettings || {};
   if (prev && f) {
     if (prev._url) URL.revokeObjectURL(prev._url);
     prev._url = URL.createObjectURL(f);
     prev.src = prev._url;
     prev.style.display = 'block';
+    // Apply same filter & transform the editor has
+    prev.style.filter    = settings.filter    || '';
+    prev.style.transform = settings.transform || '';
+    prev.muted = true; // preview is silent
     prev.play().catch(()=>{});
   }
 
@@ -4107,9 +4188,7 @@ window.applyPhotoEdits = () => {
   const prev = document.getElementById('photoPreview');
   if (prev && img) {
     prev.src = img.src;
-    prev.style.filter    = window._photoEditorFilter;
-    prev.style.transform = window._photoEditorTransform;
-    prev.style.display   = 'block';
+    prev.style.cssText += `;filter:${window._photoEditorFilter||''};transform:${window._photoEditorTransform||''};display:block;`;
   }
 
   // Update status label
