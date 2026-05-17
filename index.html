@@ -1797,6 +1797,8 @@ async function loadProfile(uid) {
     const q = query(collection(db,'posts'),where('uid','==',viewingUid));
     const psnap = await getDocs(q);
     const posts = psnap.docs.map(d=>({id:d.id,...d.data()}));
+    // Newest first
+    posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
     document.getElementById('profPosts').textContent = posts.length;
     renderProfileGrid(posts);
   } catch(e) {
@@ -1857,7 +1859,11 @@ async function loadTikTokFeedForUser(uid) {
       wrap.innerHTML = '<div class="tt-slide"><div class="tt-empty-slide"><span style="font-size:50px;">🎬</span><p>No videos yet.</p></div></div>';
       return;
     }
-    snap.docs.forEach(d => {
+    // Newest first
+    const sortedDocs = [...snap.docs].sort((a,b)=>{
+      return (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0);
+    });
+    sortedDocs.forEach(d => {
       const p = {id:d.id,...d.data()};
       const slide = document.createElement('div');
       slide.className = 'tt-slide';
@@ -1868,8 +1874,8 @@ async function loadTikTokFeedForUser(uid) {
       const avSrc2 = p.authorPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.authorName||'U')}&background=0e0e1f&color=00c6ff`;
       const isFollowing2 = followingSet.has(p.uid);
       slide.innerHTML = `
-        <video src="${p.mediaUrl}" loop playsinline preload="metadata" muted></video>
-        <div class="sound-toggle" onclick="toggleFeedSound(this)" title="Tap to unmute">🔇</div>
+        <video src="${p.mediaUrl}" loop playsinline preload="auto"></video>
+        <div class="sound-toggle" onclick="toggleFeedSound(this)">🔊</div>
         <div class="vid-spinner"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="4" stroke-dasharray="80 40" stroke-linecap="round"/></svg></div>
         <div class="pause-overlay"><div class="pause-ico">⏸</div></div>
         <div class="tt-overlay"></div>
@@ -1919,7 +1925,7 @@ async function loadTikTokFeedForUser(uid) {
         if (e.isIntersecting) v.play().catch(()=>{});
         else { v.pause(); v.currentTime=0; }
       });
-    }, {threshold:0.7});
+    }, {threshold:0.3, rootMargin:"100px"});
     wrap.querySelectorAll('.tt-slide').forEach(s => io.observe(s));
   } catch(e) {
     wrap.innerHTML = '<div class="tt-slide"><div class="tt-empty-slide"><span style="font-size:50px;">⚠️</span><p>Could not load videos.<br>Check connection.</p></div></div>';
@@ -2078,7 +2084,10 @@ function openVideoFeedPage(posts, title, backPage) {
     const avSrc = p.authorPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.authorName||'U')}&background=0e0e1f&color=00c6ff`;
     const catBadge = p.category ? `<div style="position:absolute;top:70px;left:14px;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;color:#fff;">🎬 ${p.category}</div>` : '';
     slide.innerHTML = `
-      <video src="${p.mediaUrl}" loop playsinline preload="metadata" muted></video>
+      <video src="${p.mediaUrl}" loop playsinline preload="auto"></video>
+      <div class="sound-toggle" onclick="toggleFeedSound(this)">🔊</div>
+      <div class="vid-spinner"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="4" stroke-dasharray="80 40" stroke-linecap="round"/></svg></div>
+      <div class="pause-overlay"><div class="pause-ico">⏸</div></div>
       <div class="tt-overlay"></div>
       ${catBadge}
       <div class="tt-info">
@@ -2132,7 +2141,7 @@ function openVideoFeedPage(posts, title, backPage) {
       if (e.isIntersecting) v.play().catch(()=>{});
       else { v.pause(); v.currentTime = 0; }
     });
-  }, { threshold: 0.7 });
+  }, {threshold:0.3, rootMargin:"100px"});
   wrap.querySelectorAll('.tt-slide').forEach(s => _vfpObserver.observe(s));
 
   openPage('videoFeedPage');
@@ -2236,7 +2245,10 @@ function loadCategoryFeed(cat) {
       } else if(post.type==='video' && post.mediaUrl){
         // Video slide — same as explore feed
         slide.innerHTML = `
-          <video src="${post.mediaUrl}" loop playsinline preload="metadata" muted></video>
+          <video src="${post.mediaUrl}" loop playsinline preload="auto"></video>
+          <div class="sound-toggle" onclick="toggleFeedSound(this)">🔊</div>
+          <div class="vid-spinner"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="4" stroke-dasharray="80 40" stroke-linecap="round"/></svg></div>
+          <div class="pause-overlay"><div class="pause-ico">⏸</div></div>
           <div class="tt-overlay"></div>
           ${catBadge}
           <div class="tt-info">
@@ -2293,7 +2305,7 @@ function loadCategoryFeed(cat) {
         if(e.isIntersecting) v.play().catch(()=>{});
         else { v.pause(); v.currentTime=0; }
       });
-    },{threshold:0.7});
+    },{threshold:0.3, rootMargin:"100px"});
     snapWrap.querySelectorAll('.tt-slide, .ad-slide').forEach(s=>catObs.observe(s));
   }).catch(e=>{
     grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">⚠️ Could not load posts.<br>${e.message}</div>`;
@@ -2361,6 +2373,11 @@ async function loadTikTokFeed(cat) {
       : query(collection(db,'posts'), where('type','==','video'), limit(30));
     const rsnap = await getDocs(rq);
     randomPosts = rsnap.docs.map(d => ({id:d.id,...d.data()}));
+    randomPosts.sort((a,b)=>{
+      const at = a.createdAt?.seconds || a.createdAt?.toMillis?.() || 0;
+      const bt = b.createdAt?.seconds || b.createdAt?.toMillis?.() || 0;
+      return bt - at;
+    });
 
     // 4. Merge: following first → boosted → random (no duplicates), newest first
     const seen = new Set();
@@ -2368,12 +2385,12 @@ async function loadTikTokFeed(cat) {
     [...followingPosts, ...boostedPosts, ...randomPosts].forEach(p => {
       if (!seen.has(p.id)) { seen.add(p.id); allPosts.push(p); }
     });
-    // Sort all (except pinned following/boosted stay at top, rest newest first)
-    const pinned = allPosts.filter(p => p._fromFollow || p._boosted);
-    const rest   = allPosts.filter(p => !p._fromFollow && !p._boosted);
-    rest.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
-    allPosts.length = 0;
-    [...pinned, ...rest].forEach(p => allPosts.push(p));
+    // Newest first — sort everything, no exceptions
+    allPosts.sort((a,b)=>{
+      const at = a.createdAt?.seconds || a.createdAt?.toMillis?.() || 0;
+      const bt = b.createdAt?.seconds || b.createdAt?.toMillis?.() || 0;
+      return bt - at;
+    });
 
     wrap.innerHTML = '';
     if (!allPosts.length) {
@@ -2400,8 +2417,8 @@ async function loadTikTokFeed(cat) {
 
       const avSrc = p.authorPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.authorName||'U')}&background=0e0e1f&color=00c6ff`;
       slide.innerHTML = `
-        <video src="${p.mediaUrl}" loop playsinline preload="metadata" muted></video>
-        <div class="sound-toggle" onclick="toggleFeedSound(this)" title="Tap to unmute">🔇</div>
+        <video src="${p.mediaUrl}" loop playsinline preload="auto"></video>
+        <div class="sound-toggle" onclick="toggleFeedSound(this)">🔊</div>
         <div class="vid-spinner"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="4" stroke-dasharray="80 40" stroke-linecap="round"/></svg></div>
         <div class="pause-overlay"><div class="pause-ico">⏸</div></div>
         <div class="tt-overlay"></div>
@@ -2455,10 +2472,18 @@ async function loadTikTokFeed(cat) {
 
         if (e.isIntersecting) {
           if (v) {
-            v.muted = _feedMuted;
             v.play().catch(()=>{});
             applyMuteToSlide(e.target);
             attachVideoEvents(e.target);
+            // Preload next slide's video while this one plays
+            const next = e.target.nextElementSibling;
+            if (next) {
+              const nv = next.querySelector('video');
+              if (nv && !nv.src.startsWith('blob') && nv.preload !== 'auto') {
+                nv.preload = 'auto';
+                nv.load();
+              }
+            }
           }
 
           const postId = e.target.dataset.postId;
@@ -2498,7 +2523,7 @@ async function loadTikTokFeed(cat) {
           });
         }
       });
-    }, {threshold:0.8});
+    }, {threshold:0.3, rootMargin:"100px"});
     wrap.querySelectorAll('.tt-slide, .ad-slide').forEach(s => io.observe(s));
 
   } catch(err) {
@@ -3328,7 +3353,7 @@ onAuthStateChanged(auth, u => { window._currentUid = u?.uid || ''; });
 // COMMENTS SYSTEM — with replies, likes, report
 // ══════════════════════════════════════════════════════════════
 // ─── Feed sound + pause overlay + buffering ───────────────────
-let _feedMuted = true;
+let _feedMuted = false;
 
 window.toggleFeedSound = (btn) => {
   _feedMuted = !_feedMuted;
@@ -4524,14 +4549,16 @@ async function burnEditorToVideo(file, settings) {
 // ─── Push Notifications ───────────────────────────────────────
 function requestNotifPermission() {
   if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') return;
+  if (Notification.permission === 'granted') {
+    registerPeriodicNotif();
+    return;
+  }
   if (Notification.permission === 'denied') return;
-  // Small delay so it doesn't fire right on login
   setTimeout(() => {
     Notification.requestPermission().then(perm => {
       if (perm === 'granted') {
         console.log('✅ Notifications enabled');
-        // Save permission to user doc
+        registerPeriodicNotif();
         if (currentUser) {
           updateDoc(doc(db,'users',currentUser.uid), {
             notifEnabled: true, notifUpdatedAt: serverTimestamp()
@@ -4542,23 +4569,48 @@ function requestNotifPermission() {
   }, 3000);
 }
 
+// Register periodic background notification via SW
+async function registerPeriodicNotif() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    // Tell SW to start sending periodic reminders
+    if (reg.active) {
+      reg.active.postMessage({ type: 'START_PERIODIC_NOTIF' });
+    }
+  } catch(e) { console.log('Periodic notif setup failed:', e); }
+}
+
+// Also show an in-app notification when the user switches back to the tab
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && currentUser) {
+    loadNotifCount();
+  }
+});
+
 // Save a notification to Firestore (toUid's notifications collection)
 async function sendNotification(toUid, data) {
   if (!toUid || !currentUser) return;
   try {
+    // Save to Firestore so it shows in the bell
     await addDoc(collection(db,'users',toUid,'notifications'), {
-      ...data,
-      read: false,
-      createdAt: serverTimestamp()
+      ...data, read: false, createdAt: serverTimestamp()
     });
-    // Also show browser notification if we have permission
-    if (Notification.permission === 'granted' && document.hidden) {
+    // If this is OUR own notification (e.g. someone liked our post),
+    // show it via SW for reliability even when app is backgrounded
+    if (toUid === currentUser.uid && 'serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      reg.active?.postMessage({
+        type: 'SEND_NOTIF',
+        title: data.title,
+        body:  data.body,
+        icon:  data.fromPhoto || 'icon-192.png',
+        tag:   data.type + '-' + toUid
+      });
+    } else if (Notification.permission === 'granted' && document.hidden) {
       new Notification(data.title, {
         body: data.body,
         icon: data.fromPhoto || 'icon-192.png',
-        badge: 'icon-96.png',
-        tag: data.type + '-' + toUid,
-        renotify: true
+        tag:  data.type + '-' + toUid
       });
     }
   } catch(e) { console.log('Notification send failed:', e); }
