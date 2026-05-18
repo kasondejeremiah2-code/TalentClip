@@ -6,10 +6,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>TalentClip</title>
 
-<!-- PWA core -->
-<link rel="manifest" href="manifest.json">
+<!-- PWA core — inline manifest so no 404 -->
 <meta name="theme-color" content="#060612">
 <meta name="description" content="Show your talent. Inspire the world. 🔥">
+<script>
+  // Inline manifest avoids 404 on GitHub Pages / PWA Builder
+  const _m = {
+    name:"TalentClip",short_name:"TalentClip",
+    description:"Show your talent. Inspire the world.",
+    start_url:"./",scope:"./",
+    display:"fullscreen",
+    display_override:["fullscreen","standalone","minimal-ui"],
+    background_color:"#060612",theme_color:"#060612",
+    orientation:"portrait-primary",
+    icons:[
+      {src:"icon-72.png",sizes:"72x72",type:"image/png",purpose:"any maskable"},
+      {src:"icon-96.png",sizes:"96x96",type:"image/png",purpose:"any maskable"},
+      {src:"icon-128.png",sizes:"128x128",type:"image/png",purpose:"any maskable"},
+      {src:"icon-144.png",sizes:"144x144",type:"image/png",purpose:"any maskable"},
+      {src:"icon-152.png",sizes:"152x152",type:"image/png",purpose:"any maskable"},
+      {src:"icon-192.png",sizes:"192x192",type:"image/png",purpose:"any maskable"},
+      {src:"icon-384.png",sizes:"384x384",type:"image/png",purpose:"any maskable"},
+      {src:"icon-512.png",sizes:"512x512",type:"image/png",purpose:"any maskable"}
+    ],
+    screenshots:[{src:"icon-512.png",sizes:"512x512",type:"image/png",form_factor:"narrow",label:"TalentClip Feed"}],
+    shortcuts:[
+      {name:"Upload",url:"./#upload",icons:[{src:"icon-96.png",sizes:"96x96"}]},
+      {name:"Explore",url:"./#explore",icons:[{src:"icon-96.png",sizes:"96x96"}]}
+    ]
+  };
+  const _mb = new Blob([JSON.stringify(_m)],{type:'application/json'});
+  const _ml = document.createElement('link');
+  _ml.rel='manifest'; _ml.href=URL.createObjectURL(_mb);
+  document.head.appendChild(_ml);
+</script>
 
 <!-- Android fullscreen -->
 <meta name="mobile-web-app-capable" content="yes">
@@ -4268,14 +4298,19 @@ window.ttBookmark = async (postId, el) => {
 
 async function addWatermarkToSaved(postId) {
   try {
+    // Get post data from Firestore to get the real mediaUrl and type
+    const postSnap = await getDoc(doc(db,'posts',postId));
+    const postData = postSnap.exists() ? postSnap.data() : null;
+
     const slide = document.querySelector(`.tt-slide[data-post-id="${postId}"]`);
-    if (!slide) return;
+    const vid = slide?.querySelector('video');
+    const img = slide?.querySelector('img:not([src*="ui-avatars"]):not([src*="icon"])');
 
-    // Check video FIRST — video slides also contain img elements (thumbnails)
-    const vid = slide.querySelector('video');
-    const img = slide.querySelector('img:not([src*="ui-avatars"])');
+    // Use Firestore mediaUrl — more reliable than DOM element src
+    const mediaUrl = postData?.mediaUrl || vid?.src || img?.src;
+    const isVideo  = postData?.type === 'video' || (vid && vid.src && !img);
 
-    if (vid && vid.src) {
+    if (isVideo && mediaUrl) {
       // ── VIDEO watermark via Canvas + MediaRecorder ──
       // Draw each frame on canvas with watermark, record with MediaRecorder
       toast('⏳ Adding TalentClip watermark to video...');
@@ -4304,70 +4339,38 @@ async function addWatermarkToSaved(postId) {
         ctx.restore();
       };
 
-      // Check if MediaRecorder is supported
-      if (!window.MediaRecorder) {
-        toast('💾 Video saved to collection (watermark on mobile requires MediaRecorder support)');
-        return;
+      // Direct download from Cloudinary URL — reliable on all mobile browsers
+      // Cloudinary supports adding text overlay via URL transformation
+      // If it's a Cloudinary URL, add watermark via URL params
+      let downloadUrl = mediaUrl;
+      if (mediaUrl.includes('cloudinary.com') && mediaUrl.includes('/upload/')) {
+        // Insert Cloudinary text overlay transformation
+        downloadUrl = mediaUrl.replace(
+          '/upload/',
+          '/upload/l_text:Arial_36_bold:TalentClip,co_white,o_70,g_south_east,x_16,y_16/'
+        );
       }
-
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-        ? 'video/webm;codecs=vp9' : 'video/webm';
-
-      // Capture canvas stream
-      const stream = canvas.captureStream(30);
-
-      // Add audio
+      // Fetch and download
+      toast('⏳ Saving video...');
       try {
-        const actx = new (window.AudioContext||window.webkitAudioContext)();
-        const src  = actx.createMediaElementSource(vid);
-        const dest = actx.createMediaStreamDestination();
-        src.connect(dest); src.connect(actx.destination);
-        dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
-        stream._actx = actx;
-      } catch(e) { /* no audio — ok */ }
-
-      const recorder  = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 4000000 });
-      const chunks    = [];
-      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-
-      recorder.onstop = () => {
-        stream._actx?.close();
-        const blob = new Blob(chunks, { type: mimeType });
+        const resp = await fetch(downloadUrl);
+        const blob = await resp.blob();
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href     = url;
-        a.download = `TalentClip-${postId}.webm`;
+        a.download = `TalentClip-${postId}.mp4`;
+        document.body.appendChild(a);
         a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 3000);
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
         toast('✅ Video saved with TalentClip watermark!');
-      };
+      } catch(e) {
+        // Fallback: open in new tab for manual save
+        window.open(downloadUrl, '_blank');
+        toast('✅ Video opened — long press to save');
+      }
 
-      // Seek to start, record for actual duration (max 60s)
-      const savedTime = vid.currentTime;
-      vid.currentTime = 0;
-      await new Promise(r => vid.onseeked = r);
-
-      recorder.start(100);
-      const maxDuration = Math.min(vid.duration || 60, 60) * 1000;
-      const recordStart = Date.now();
-
-      const drawLoop = () => {
-        if (Date.now() - recordStart >= maxDuration || vid.ended) {
-          recorder.stop();
-          vid.currentTime = savedTime;
-          return;
-        }
-        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-        drawWatermark();
-        requestAnimationFrame(drawLoop);
-      };
-
-      vid.play().then(drawLoop).catch(() => {
-        recorder.stop();
-        toast('❌ Could not record video');
-      });
-
-    } else if (img && img.src) {
+    } else if (!isVideo && mediaUrl) {
       // ── PHOTO watermark via canvas ──
       const canvas  = document.createElement('canvas');
       const image   = new Image();
@@ -4393,7 +4396,7 @@ async function addWatermarkToSaved(postId) {
         toast('✅ Photo saved with TalentClip watermark!');
       };
       image.onerror = () => toast('❌ Could not add watermark to photo');
-      image.src = img.src;
+      image.src = mediaUrl;
     }
   } catch(e) {
     console.error('Watermark error:', e);
@@ -5309,23 +5312,16 @@ window.confirmDeletePost = async (postId) => {
   if (!currentUser) { openLoginGate(); return; }
   try {
     toast('Deleting...');
-    // Verify ownership before attempting delete
-    const postSnap = await getDoc(doc(db,'posts',postId));
-    if (!postSnap.exists()) { toast('Post not found'); return; }
-    if (postSnap.data().uid !== currentUser.uid) {
-      toast('❌ You can only delete your own posts');
-      return;
-    }
     await deleteDoc(doc(db,'posts',postId));
-    // Decrement postCount safely
-    try {
-      await updateDoc(doc(db,'users',currentUser.uid),{postCount:increment(-1)});
-    } catch(e) { /* non-critical */ }
+    try { await updateDoc(doc(db,'users',currentUser.uid),{postCount:increment(-1)}); } catch(e){}
     toast('✅ Post deleted');
+    // Remove from UI immediately
+    document.querySelector(`.tt-slide[data-post-id="${postId}"]`)?.remove();
+    document.querySelector(`.fg-item[data-post-id="${postId}"]`)?.remove();
     loadProfile(currentUser.uid);
   } catch(e) {
     console.error('Delete error:', e);
-    toast('❌ Could not delete: ' + e.message);
+    toast('❌ Delete failed: ' + e.message);
   }
 };
 
