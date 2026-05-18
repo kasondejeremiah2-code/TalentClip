@@ -6,40 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>TalentClip</title>
 
-<!-- PWA core — inline manifest so no 404 -->
+<!-- PWA core -->
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#060612">
 <meta name="description" content="Show your talent. Inspire the world. 🔥">
-<script>
-  // Inline manifest avoids 404 on GitHub Pages / PWA Builder
-  const _m = {
-    name:"TalentClip",short_name:"TalentClip",
-    description:"Show your talent. Inspire the world.",
-    start_url:"./",scope:"./",
-    display:"fullscreen",
-    display_override:["fullscreen","standalone","minimal-ui"],
-    background_color:"#060612",theme_color:"#060612",
-    orientation:"portrait-primary",
-    icons:[
-      {src:"icon-72.png",sizes:"72x72",type:"image/png",purpose:"any maskable"},
-      {src:"icon-96.png",sizes:"96x96",type:"image/png",purpose:"any maskable"},
-      {src:"icon-128.png",sizes:"128x128",type:"image/png",purpose:"any maskable"},
-      {src:"icon-144.png",sizes:"144x144",type:"image/png",purpose:"any maskable"},
-      {src:"icon-152.png",sizes:"152x152",type:"image/png",purpose:"any maskable"},
-      {src:"icon-192.png",sizes:"192x192",type:"image/png",purpose:"any maskable"},
-      {src:"icon-384.png",sizes:"384x384",type:"image/png",purpose:"any maskable"},
-      {src:"icon-512.png",sizes:"512x512",type:"image/png",purpose:"any maskable"}
-    ],
-    screenshots:[{src:"icon-512.png",sizes:"512x512",type:"image/png",form_factor:"narrow",label:"TalentClip Feed"}],
-    shortcuts:[
-      {name:"Upload",url:"./#upload",icons:[{src:"icon-96.png",sizes:"96x96"}]},
-      {name:"Explore",url:"./#explore",icons:[{src:"icon-96.png",sizes:"96x96"}]}
-    ]
-  };
-  const _mb = new Blob([JSON.stringify(_m)],{type:'application/json'});
-  const _ml = document.createElement('link');
-  _ml.rel='manifest'; _ml.href=URL.createObjectURL(_mb);
-  document.head.appendChild(_ml);
-</script>
 
 <!-- Android fullscreen -->
 <meta name="mobile-web-app-capable" content="yes">
@@ -5315,13 +5285,17 @@ window.confirmDeletePost = async (postId) => {
     await deleteDoc(doc(db,'posts',postId));
     try { await updateDoc(doc(db,'users',currentUser.uid),{postCount:increment(-1)}); } catch(e){}
     toast('✅ Post deleted');
-    // Remove from UI immediately
     document.querySelector(`.tt-slide[data-post-id="${postId}"]`)?.remove();
     document.querySelector(`.fg-item[data-post-id="${postId}"]`)?.remove();
+    document.querySelector(`[data-post-id="${postId}"]`)?.closest('.tt-slide, .fg-item')?.remove();
     loadProfile(currentUser.uid);
   } catch(e) {
     console.error('Delete error:', e);
-    toast('❌ Delete failed: ' + e.message);
+    if (e.code === 'permission-denied') {
+      toast('❌ Permission denied — make sure Firestore rules allow delete');
+    } else {
+      toast('❌ Delete failed: ' + e.message);
+    }
   }
 };
 
