@@ -4249,56 +4249,156 @@ window.ttBookmark = async (postId, el) => {
   if (snap.exists()) {
     await deleteDoc(ref);
     if (ico) ico.textContent = '🔖';
+    // Update label
+    const lbl = el?.querySelector('.lbl');
+    if (lbl) lbl.textContent = 'Save';
+    el?.classList.remove('saved');
     toast('Removed from saved');
   } else {
     await setDoc(ref, { savedAt: serverTimestamp(), postId });
-    if (ico) ico.textContent = '🔒';
-    toast('✅ Saved! TalentClip watermark added.');
-    // ── Watermark: find the slide's video URL and create download with watermark ──
+    if (ico) ico.textContent = '🔖';
+    // Update label to show saved
+    const lbl = el?.querySelector('.lbl');
+    if (lbl) lbl.textContent = 'Saved ✓';
+    el?.classList.add('saved');
+    toast('✅ Saved!');
     addWatermarkToSaved(postId);
   }
 };
 
 async function addWatermarkToSaved(postId) {
   try {
-    // Find the video or image src from the visible slide
     const slide = document.querySelector(`.tt-slide[data-post-id="${postId}"]`);
     if (!slide) return;
-    const vid = slide.querySelector('video');
-    const img = slide.querySelector('img');
 
-    if (img) {
-      // Photo watermark via canvas
+    // Check video FIRST — video slides also contain img elements (thumbnails)
+    const vid = slide.querySelector('video');
+    const img = slide.querySelector('img:not([src*="ui-avatars"])');
+
+    if (vid && vid.src) {
+      // ── VIDEO watermark via Canvas + MediaRecorder ──
+      // Draw each frame on canvas with watermark, record with MediaRecorder
+      toast('⏳ Adding TalentClip watermark to video...');
+
       const canvas = document.createElement('canvas');
-      const image = new Image();
-      image.crossOrigin = 'anonymous';
-      image.onload = () => {
-        canvas.width = image.width; canvas.height = image.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(image, 0, 0);
-        // TalentClip watermark
+      canvas.width  = vid.videoWidth  || 720;
+      canvas.height = vid.videoHeight || 1280;
+      const ctx = canvas.getContext('2d');
+
+      const drawWatermark = () => {
+        const fs = Math.round(canvas.width * 0.055);
         ctx.save();
-        ctx.globalAlpha = 0.7;
-        ctx.font = `bold ${Math.round(image.width * 0.045)}px Arial`;
-        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.75;
+        ctx.font = `bold ${fs}px Arial`;
+        ctx.fillStyle = '#fff';
         ctx.textAlign = 'right';
         ctx.shadowColor = '#000';
-        ctx.shadowBlur = 6;
-        ctx.fillText('TalentClip', image.width - 16, image.height - 16);
+        ctx.shadowBlur = 8;
+        // Bottom-right watermark
+        ctx.fillText('TalentClip', canvas.width - 16, canvas.height - 16);
+        // Small logo text top-left
+        ctx.textAlign = 'left';
+        ctx.font = `bold ${Math.round(fs * 0.7)}px Arial`;
+        ctx.globalAlpha = 0.5;
+        ctx.fillText('@TalentClip', 16, 36);
         ctx.restore();
-        // Auto-download
-        const a = document.createElement('a');
-        a.href = canvas.toDataURL('image/jpeg', 0.92);
-        a.download = `talentclip-${postId}.jpg`;
-        a.click();
       };
+
+      // Check if MediaRecorder is supported
+      if (!window.MediaRecorder) {
+        toast('💾 Video saved to collection (watermark on mobile requires MediaRecorder support)');
+        return;
+      }
+
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9' : 'video/webm';
+
+      // Capture canvas stream
+      const stream = canvas.captureStream(30);
+
+      // Add audio
+      try {
+        const actx = new (window.AudioContext||window.webkitAudioContext)();
+        const src  = actx.createMediaElementSource(vid);
+        const dest = actx.createMediaStreamDestination();
+        src.connect(dest); src.connect(actx.destination);
+        dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+        stream._actx = actx;
+      } catch(e) { /* no audio — ok */ }
+
+      const recorder  = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 4000000 });
+      const chunks    = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+      recorder.onstop = () => {
+        stream._actx?.close();
+        const blob = new Blob(chunks, { type: mimeType });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `TalentClip-${postId}.webm`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 3000);
+        toast('✅ Video saved with TalentClip watermark!');
+      };
+
+      // Seek to start, record for actual duration (max 60s)
+      const savedTime = vid.currentTime;
+      vid.currentTime = 0;
+      await new Promise(r => vid.onseeked = r);
+
+      recorder.start(100);
+      const maxDuration = Math.min(vid.duration || 60, 60) * 1000;
+      const recordStart = Date.now();
+
+      const drawLoop = () => {
+        if (Date.now() - recordStart >= maxDuration || vid.ended) {
+          recorder.stop();
+          vid.currentTime = savedTime;
+          return;
+        }
+        ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+        drawWatermark();
+        requestAnimationFrame(drawLoop);
+      };
+
+      vid.play().then(drawLoop).catch(() => {
+        recorder.stop();
+        toast('❌ Could not record video');
+      });
+
+    } else if (img && img.src) {
+      // ── PHOTO watermark via canvas ──
+      const canvas  = document.createElement('canvas');
+      const image   = new Image();
+      image.crossOrigin = 'anonymous';
+      image.onload  = () => {
+        canvas.width  = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0);
+        const fs = Math.round(image.naturalWidth * 0.045);
+        ctx.save();
+        ctx.globalAlpha = 0.75;
+        ctx.font = `bold ${fs}px Arial`;
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'right';
+        ctx.shadowColor = '#000'; ctx.shadowBlur = 6;
+        ctx.fillText('TalentClip', image.naturalWidth - 16, image.naturalHeight - 16);
+        ctx.restore();
+        const a   = document.createElement('a');
+        a.href    = canvas.toDataURL('image/jpeg', 0.92);
+        a.download = `TalentClip-${postId}.jpg`;
+        a.click();
+        toast('✅ Photo saved with TalentClip watermark!');
+      };
+      image.onerror = () => toast('❌ Could not add watermark to photo');
       image.src = img.src;
-    } else if (vid) {
-      // For video we show a toast — canvas video recording requires MediaRecorder
-      // which is not universally supported. We note the watermark is in the filename.
-      toast('💾 Video saved to your collection with TalentClip tag');
     }
-  } catch(e) { console.log('Watermark error:', e); }
+  } catch(e) {
+    console.error('Watermark error:', e);
+    toast('❌ Could not save: ' + e.message);
+  }
 }
 
 window.ttDuet = (postId, authorName) => {
@@ -5206,13 +5306,25 @@ window.postMenuDelete = async () => {
 };
 
 window.confirmDeletePost = async (postId) => {
+  if (!currentUser) { openLoginGate(); return; }
   try {
     toast('Deleting...');
+    // Verify ownership before attempting delete
+    const postSnap = await getDoc(doc(db,'posts',postId));
+    if (!postSnap.exists()) { toast('Post not found'); return; }
+    if (postSnap.data().uid !== currentUser.uid) {
+      toast('❌ You can only delete your own posts');
+      return;
+    }
     await deleteDoc(doc(db,'posts',postId));
-    await updateDoc(doc(db,'users',currentUser.uid),{postCount:increment(-1)});
+    // Decrement postCount safely
+    try {
+      await updateDoc(doc(db,'users',currentUser.uid),{postCount:increment(-1)});
+    } catch(e) { /* non-critical */ }
     toast('✅ Post deleted');
     loadProfile(currentUser.uid);
   } catch(e) {
+    console.error('Delete error:', e);
     toast('❌ Could not delete: ' + e.message);
   }
 };
