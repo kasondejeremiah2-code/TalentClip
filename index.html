@@ -5100,16 +5100,33 @@ window.closeExploreVideo = () => {
 window.openPage = (id) => {
   const target = document.getElementById(id);
   if (!target) { console.error('openPage: no element with id='+id); return; }
+
+  // Always pause all videos when navigating
+  document.querySelectorAll('video').forEach(v => { v.pause(); });
+
   // Hide fixed video feed when leaving explore
   const evf = document.getElementById('exploreVideoFeed');
   const evb = document.getElementById('exploreVidBack');
   if(evf) evf.style.display = (id==='tiktokPage') ? 'block' : 'none';
-  if(evb) evb.style.display = 'none'; // hide back btn when navigating away
+  if(evb) evb.style.display = 'none';
+
   // Remove category snap if navigating away
   if(id !== 'categoryPage') {
     document.getElementById('catSnapWrap')?.remove();
     document.getElementById('catBackBtn')?.remove();
   }
+
+  // Close any floating overlays that may cover the screen
+  if(id !== 'videoFeedPage') {
+    document.querySelectorAll('[style*="position:fixed"][style*="z-index:9"]').forEach(el => {
+      // Only remove confirm sheets, not core UI
+      if(el.id !== 'postMenuSheet' && el.id !== 'editPostModal' && 
+         el.id !== 'commentSheet' && el.id !== 'giftSheet') {
+        el.remove();
+      }
+    });
+  }
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   target.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
@@ -5220,17 +5237,25 @@ window.openPostMenu = (postId, caption, category, type) => {
 
 window.closePostMenu = () => {
   document.getElementById('postMenuSheet').classList.remove('open');
-  activePostId = null;
+  // Do NOT null activePostId here — edit modal still needs it
 };
 
 window.postMenuEdit = () => {
-  closePostMenu();
+  document.getElementById('postMenuSheet').classList.remove('open');
+  // Re-fill edit fields in case they weren't set
+  const cap = document.getElementById('editCaption');
+  if (cap && !cap.value && activePostId) {
+    // Keep whatever was pre-filled by openPostMenu
+  }
   document.getElementById('editPostModal').classList.add('open');
 };
 
 window.closeEditPost = () => {
   document.getElementById('editPostModal').classList.remove('open');
+  activePostId = null; // null here after edit is fully done
 };
+
+
 
 window.saveEditPost = async () => {
   if (!activePostId || !currentUser) return;
@@ -5238,20 +5263,31 @@ window.saveEditPost = async () => {
   const category = document.getElementById('editCategory').value;
   if (!caption) { toast('⚠️ Please enter a caption'); return; }
   const btn = document.querySelector('#editPostModal .pay-btn');
-  btn.disabled = true; btn.textContent = 'Saving...';
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   try {
-    const updateData = { category };
-    // Update caption or title based on post type
-    if (activePostType === 'photo') updateData.caption = caption;
-    else updateData.title = caption;
+    // Always update BOTH caption and title so grid always finds the text
+    const updateData = {
+      caption,
+      title: caption,
+      category
+    };
     await updateDoc(doc(db,'posts',activePostId), updateData);
+
+    // Update DOM immediately — no need to reload
+    document.querySelectorAll(`[data-post-id="${activePostId}"]`).forEach(el => {
+      const captionEl = el.querySelector('.fg-caption, .tt-title, .tt-caption');
+      if (captionEl) captionEl.textContent = caption;
+    });
+
     closeEditPost();
     toast('✅ Post updated!');
-    loadProfile(currentUser.uid); // refresh grid
+    // Reload after short delay to sync
+    setTimeout(() => loadProfile(currentUser.uid), 1000);
   } catch(e) {
+    console.error('Edit error:', e);
     toast('❌ Error: ' + e.message);
   }
-  btn.disabled = false; btn.textContent = '💾 Save Changes';
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Save Changes'; }
 };
 
 window.postMenuBoost = () => {
@@ -5280,23 +5316,32 @@ window.postMenuDelete = async () => {
 
 window.confirmDeletePost = async (postId) => {
   if (!currentUser) { openLoginGate(); return; }
+  activePostId = null;
+
+  // Close any overlapping sheets/modals
+  document.querySelectorAll('[style*="position:fixed"][style*="z-index:9"]').forEach(el => el.remove());
+
+  // Pause all videos before navigating
+  document.querySelectorAll('video').forEach(v => v.pause());
+
+  // Navigate to profile immediately — user sees profile, not black
+  window._viewingUser = false;
+  viewingUid = currentUser.uid;
+  openPage('profile');
+
+  toast('🗑️ Deleting...');
+
   try {
-    toast('Deleting...');
     await deleteDoc(doc(db,'posts',postId));
     try { await updateDoc(doc(db,'users',currentUser.uid),{postCount:increment(-1)}); } catch(e){}
     toast('✅ Post deleted');
-    document.querySelector(`.tt-slide[data-post-id="${postId}"]`)?.remove();
-    document.querySelector(`.fg-item[data-post-id="${postId}"]`)?.remove();
-    document.querySelector(`[data-post-id="${postId}"]`)?.closest('.tt-slide, .fg-item')?.remove();
-    loadProfile(currentUser.uid);
   } catch(e) {
     console.error('Delete error:', e);
-    if (e.code === 'permission-denied') {
-      toast('❌ Permission denied — make sure Firestore rules allow delete');
-    } else {
-      toast('❌ Delete failed: ' + e.message);
-    }
+    toast('❌ Delete failed: ' + e.message);
   }
+
+  // Reload profile after Firestore propagates
+  setTimeout(() => loadProfile(currentUser.uid), 1500);
 };
 
 window.closeWithdraw = () => {
