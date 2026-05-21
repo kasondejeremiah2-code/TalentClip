@@ -2,8 +2,8 @@
   "name": "TalentClip",
   "short_name": "TalentClip",
   "description": "Show your talent. Inspire the world. A social media platform for Zambian creators.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "background_color": "#060612",
@@ -35,12 +35,12 @@
   "shortcuts": [
     {
       "name": "Upload Video",
-      "url": "/#upload",
+      "url": "./index.html#upload",
       "icons": [{"src": "icon-96.png", "sizes": "96x96"}]
     },
     {
       "name": "Explore",
-      "url": "/#explore",
+      "url": "./index.html#explore",
       "icons": [{"src": "icon-96.png", "sizes": "96x96"}]
     }
   ]

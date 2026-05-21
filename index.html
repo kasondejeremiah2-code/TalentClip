@@ -6,7 +6,7 @@
 <title>TalentClip</title>
 
 <!-- PWA Manifest -->
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="./manifest.json">
 
 <!-- Theme -->
 <meta name="theme-color" content="#060612">
@@ -25,7 +25,7 @@
 <!-- Service Worker -->
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/pwabuilder-sw.js')
+    navigator.serviceWorker.register('./pwabuilder-sw.js')
       .then(r => console.log('✅ SW:', r.scope))
       .catch(e => console.warn('SW failed:', e));
   }
