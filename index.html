@@ -2,39 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- FULLSCREEN PWA — covers status bar on Android & iOS like TikTok -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>TalentClip</title>
 
-<!-- PWA core -->
-<link rel="manifest" href="manifest.json">
+<!-- PWA Manifest -->
+<link rel="manifest" href="/manifest.json">
+
+<!-- Theme -->
 <meta name="theme-color" content="#060612">
 <meta name="description" content="Show your talent. Inspire the world. 🔥">
 
-<!-- Android fullscreen -->
+<!-- Android PWA -->
 <meta name="mobile-web-app-capable" content="yes">
 
-<!-- iOS fullscreen — hides Safari chrome completely -->
+<!-- iOS PWA — hides Safari bar when added to home screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TalentClip">
-
-<!-- iOS icons -->
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
-<!-- Splash screens for iOS (prevents white flash) -->
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- Service Worker registration -->
+<!-- Service Worker -->
 <script>
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./pwabuilder-sw.js')
-        .then(reg => console.log('✅ SW registered:', reg.scope))
-        .catch(err => console.log('SW error:', err));
-    });
+    navigator.serviceWorker.register('/pwabuilder-sw.js')
+      .then(r => console.log('✅ SW:', r.scope))
+      .catch(e => console.warn('SW failed:', e));
   }
 </script>
 
