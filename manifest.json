@@ -1,27 +1,25 @@
 {
+  "id": "/TalentClip/",
   "name": "TalentClip",
   "short_name": "TalentClip",
-  "description": "Show your talent. Inspire the world. A social media platform for Zambian creators.",
-  "start_url": "./index.html",
-  "scope": "./",
-  "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "description": "TalentClip is a short video social platform for Zambian creators.",
+  "start_url": "/TalentClip/",
+  "scope": "/TalentClip/",
+  "display": "fullscreen",
   "background_color": "#060612",
   "theme_color": "#060612",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "lang": "en",
   "categories": ["social", "entertainment"],
-  "prefer_related_applications": false,
   "icons": [
-    {"src": "icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any"},
-    {"src": "icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any"},
-    {"src": "icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any"},
-    {"src": "icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any"},
-    {"src": "icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any"},
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {"src": "icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
   ],
   "screenshots": [
     {
@@ -33,15 +31,7 @@
     }
   ],
   "shortcuts": [
-    {
-      "name": "Upload Video",
-      "url": "./index.html#upload",
-      "icons": [{"src": "icon-96.png", "sizes": "96x96"}]
-    },
-    {
-      "name": "Explore",
-      "url": "./index.html#explore",
-      "icons": [{"src": "icon-96.png", "sizes": "96x96"}]
-    }
+    {"name": "Upload", "url": "/TalentClip/#upload", "icons": [{"src": "icon-96.png", "sizes": "96x96"}]},
+    {"name": "Explore", "url": "/TalentClip/#explore", "icons": [{"src": "icon-96.png", "sizes": "96x96"}]}
   ]
 }
